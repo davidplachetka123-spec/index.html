@@ -1,0 +1,2868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>forestFighters67</title>
+  <style>
+    :root {
+      --sky-top: #cdeaff;
+      --sky-bottom: #84abbe;
+      --panel: rgba(15, 26, 18, 0.88);
+      --panel-soft: rgba(29, 44, 31, 0.8);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #f2f7ef;
+      --muted: #c8d6c5;
+      --accent: #ffd870;
+      --accent-strong: #e8923d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      font-family: "Trebuchet MS", Verdana, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, var(--sky-top), var(--sky-bottom));
+    }
+
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      background: linear-gradient(180deg, #96d7ff 0%, #edfaff 34%, #78b45c 34%, #5f9446 100%);
+    }
+
+    .hud {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: min(400px, calc(100vw - 36px));
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .hud h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: 0.04em;
+    }
+
+    .hud p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .hud strong {
+      color: var(--text);
+    }
+
+    .menu {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(8, 14, 10, 0.16), rgba(8, 14, 10, 0.64));
+    }
+
+    .menu.hidden {
+      display: none;
+    }
+
+    .panel {
+      width: min(860px, 100%);
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: 0 22px 80px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(12px);
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 44px);
+      letter-spacing: 0.03em;
+    }
+
+    .intro {
+      margin: 0 0 18px;
+      max-width: 64ch;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .characters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .character-card {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 16px;
+      background: var(--panel-soft);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      appearance: none;
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    .character-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 215, 113, 0.45);
+    }
+
+    .character-card.active {
+      background: rgba(57, 83, 62, 0.96);
+      border-color: rgba(255, 215, 113, 0.78);
+    }
+
+    .swatch {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      margin-bottom: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.14);
+    }
+
+    .character-card h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .character-card p {
+      margin: 0;
+      line-height: 1.45;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hint {
+      max-width: 60ch;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .name-entry {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 14px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .name-entry input {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: rgba(10, 18, 12, 0.62);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .secondary-button {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .menu-status {
+      margin-top: 12px;
+      min-height: 22px;
+      color: var(--accent);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .start-button {
+      border: none;
+      border-radius: 999px;
+      padding: 14px 22px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #1b170e;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .start-button:hover {
+      filter: brightness(1.04);
+    }
+
+    @media (max-width: 640px) {
+      .hud {
+        top: 12px;
+        left: 12px;
+        width: calc(100vw - 24px);
+      }
+
+      .menu {
+        padding: 12px;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <div class="hud">
+      <h1>forestFighters67</h1>
+      <p><strong>Move:</strong> W A S D or Arrow Keys</p>
+      <p><strong>Jump:</strong> Space</p>
+      <p><strong>Kick:</strong> F front kick, K spinning kick, L high kick</p>
+      <p><strong>Gun:</strong> E shoots AK67</p>
+      <p><strong>Camera:</strong> drag mouse to orbit, wheel to zoom</p>
+      <p><strong>World:</strong> 500 x 500 x 500, forest, rocks, animals, hearts, fog</p>
+      <p><strong>Secret:</strong> hold 1 + 2 for black hole, hold 6 + 7 to fly</p>
+      <p id="status">Choose a fighter, then start.</p>
+    </div>
+
+    <div class="menu" id="menu">
+      <div class="panel">
+        <h2>Choose Your Fighter</h2>
+        <p class="intro">The map is now larger and denser, with more trees, rocks, hostile animals, heart-based health, and three kick attacks. Movement works with both WASD and the arrow keys in the same directions: up forward, down back, left left, right right.</p>
+        <label class="name-entry" for="usernameInput">
+          <span>Username</span>
+          <input id="usernameInput" type="text" maxlength="18" placeholder="Type your name">
+        </label>
+        <label class="name-entry" for="roomInput">
+          <span>Room Code</span>
+          <input id="roomInput" type="text" maxlength="24" placeholder="Same code as your friend">
+        </label>
+        <div class="characters" id="characters"></div>
+        <div class="actions">
+          <div class="hint">Fight wolves, boars, and stags with F, K, and L. Press E to fire the AK67. The camera is third person and movement stays camera-relative. Use Solo for offline play, Host Online to create a room, or Join Online with your friend's room code.</div>
+          <div class="button-row">
+            <button class="start-button" id="startButton">Solo</button>
+            <button class="start-button secondary-button" id="hostButton">Host Online</button>
+            <button class="start-button secondary-button" id="joinButton">Join Online</button>
+          </div>
+        </div>
+        <p class="menu-status" id="menuStatus">Solo works instantly. Online mode uses a direct peer-to-peer connection.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/peerjs/dist/peerjs.min.js"></script>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const menu = document.getElementById("menu");
+    const charactersRoot = document.getElementById("characters");
+    const startButton = document.getElementById("startButton");
+    const hostButton = document.getElementById("hostButton");
+    const joinButton = document.getElementById("joinButton");
+    const statusText = document.getElementById("status");
+    const usernameInput = document.getElementById("usernameInput");
+    const roomInput = document.getElementById("roomInput");
+    const menuStatus = document.getElementById("menuStatus");
+    const joinParams = new URLSearchParams(window.location.search);
+
+    const WORLD_SIZE = 500;
+    const WORLD_HEIGHT = 500;
+    const TREE_COUNT = 900;
+    const ROCK_COUNT = 260;
+    const ANIMAL_COUNT = 70;
+    const GRASS_PATCH_COUNT = 1400;
+    const GRAVITY = 20;
+    const PLAYER_RADIUS = 0.55;
+    const PLAYER_HEIGHT = 2.15;
+    const GROUND_STEP = 8;
+    const GROUND_RENDER_RADIUS = 96;
+    const SKYLINE = [
+      { x: 0.03, w: 0.22, h: 0.14 },
+      { x: 0.22, w: 0.18, h: 0.24 },
+      { x: 0.41, w: 0.24, h: 0.17 },
+      { x: 0.63, w: 0.22, h: 0.28 },
+      { x: 0.82, w: 0.18, h: 0.16 }
+    ];
+
+    const CHARACTERS = [
+      {
+        id: "azure",
+        name: "Azure Striker",
+        description: "Balanced blue fighter with steady kicks and controlled movement.",
+        tunic: "#215acb",
+        trim: "#f0c451",
+        leggings: "#9d5c25",
+        boots: "#e2edf1",
+        hair: "#2c1b13",
+        skin: "#e9b68a",
+        ribbon: "#f7f7f3",
+        speed: 6.4,
+        jump: 8.2
+      },
+      {
+        id: "crimson",
+        name: "Crimson Striker",
+        description: "Heavier red variant with stronger jump power and damage feel.",
+        tunic: "#b72f2b",
+        trim: "#ffd66a",
+        leggings: "#80501d",
+        boots: "#f0f1ed",
+        hair: "#24150f",
+        skin: "#ebb78c",
+        ribbon: "#fff4df",
+        speed: 6.0,
+        jump: 8.8
+      },
+      {
+        id: "jade",
+        name: "Jade Striker",
+        description: "Quicker green variant with the fastest turn speed in combat.",
+        tunic: "#167858",
+        trim: "#e6c35b",
+        leggings: "#8c551f",
+        boots: "#eef3ef",
+        hair: "#2a1a12",
+        skin: "#e4ac81",
+        ribbon: "#eff8ea",
+        speed: 6.9,
+        jump: 7.8
+      }
+    ];
+
+    const ATTACKS = {
+      f: { key: "f", label: "Front Kick", duration: 0.42, hitAt: 0.18, damage: 5, range: 2.1, arc: 1.1, knockback: 1.8 },
+      k: { key: "k", label: "Spinning Kick", duration: 0.68, hitAt: 0.3, damage: 5, range: 2.6, arc: 2.4, knockback: 2.5 },
+      l: { key: "l", label: "High Kick", duration: 0.5, hitAt: 0.22, damage: 5, range: 2.3, arc: 1.2, knockback: 2.2 }
+    };
+
+    const ANIMAL_TYPES = [
+      { id: "wolf", name: "Wolf", body: "#6f757d", back: "#52575e", accent: "#dde2e6", speed: 3.8, hp: 36, damage: 2, radius: 0.78, height: 0.95 },
+      { id: "boar", name: "Boar", body: "#694633", back: "#4c2f20", accent: "#e6d7c1", speed: 3.2, hp: 48, damage: 3, radius: 0.95, height: 1.0 },
+      { id: "stag", name: "Stag", body: "#8b6544", back: "#6d4c31", accent: "#efe0c5", speed: 4.3, hp: 40, damage: 2, radius: 0.84, height: 1.25 }
+    ];
+
+    const DRAGON_BOSS = {
+      id: "dragon-canneloni",
+      name: "Dragon Canneloni",
+      body: "#4f8c47",
+      back: "#244f25",
+      accent: "#cfef95",
+      wing: "#7bb368",
+      fire: "#ffb347",
+      speed: 3.6,
+      hp: 100,
+      damage: 4,
+      radius: 2.5,
+      height: 3.1,
+      boss: true
+    };
+
+    const keys = new Set();
+    const trees = [];
+    const rocks = [];
+    const animals = [];
+    const grassPatches = [];
+    const camera = {
+      yaw: 0,
+      pitch: 0.34,
+      distance: 9.8,
+      fov: 72,
+      dragging: false,
+      pointerId: null,
+      lastX: 0,
+      lastY: 0
+    };
+
+    let selectedCharacterIndex = 0;
+    let gameStarted = false;
+    let jumpQueued = false;
+    let lastFrame = performance.now();
+
+    const player = {
+      x: WORLD_SIZE / 2,
+      y: 0,
+      z: WORLD_SIZE / 2,
+      vy: 0,
+      radius: PLAYER_RADIUS,
+      height: PLAYER_HEIGHT,
+      facing: 0,
+      onGround: true,
+      stepPhase: 0,
+      style: CHARACTERS[0],
+      maxHp: 10,
+      hp: 10,
+      invuln: 0,
+      hitFlash: 0,
+      defeated: false,
+      attack: null,
+      username: "Player",
+      flyMode: false,
+      gunAmmo: 67,
+      gunCooldown: 0,
+      tracer: null,
+      secretCooldown: 0
+    };
+
+    let audioContext = null;
+    let blackHole = null;
+    let mapDestroyed = false;
+    let worldSeed = 1;
+    let nextAnimalId = 1;
+    let seededRandom = Math.random;
+
+    const multiplayer = {
+      mode: "solo",
+      peer: null,
+      connection: null,
+      hostConnections: new Map(),
+      remotePlayers: new Map(),
+      roomCode: "",
+      joinCode: joinParams.get("join") || "",
+      connected: false,
+      sendTimer: 0,
+      worldTimer: 0,
+      lastMessage: "Solo mode ready.",
+      shareUrl: "",
+      localPeerId: ""
+    };
+
+    function setMenuMessage(message) {
+      multiplayer.lastMessage = message;
+      menuStatus.textContent = message;
+    }
+
+    function sanitizeRoomCode(value) {
+      return (value || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 24);
+    }
+
+    function hashStringToSeed(value) {
+      let hash = 2166136261 >>> 0;
+      const text = String(value || "forestfighters67");
+      for (let i = 0; i < text.length; i += 1) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return (hash >>> 0) || 1;
+    }
+
+    function mulberry32(seed) {
+      return function () {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function setWorldSeed(seed) {
+      worldSeed = (seed >>> 0) || 1;
+      seededRandom = mulberry32(worldSeed);
+    }
+
+    function gameRandom() {
+      return seededRandom();
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function randRange(min, max) {
+      return min + gameRandom() * (max - min);
+    }
+
+    function normalize(vector) {
+      const length = Math.hypot(vector.x, vector.y, vector.z) || 1;
+      return {
+        x: vector.x / length,
+        y: vector.y / length,
+        z: vector.z / length
+      };
+    }
+
+    function cross(a, b) {
+      return {
+        x: a.y * b.z - a.z * b.y,
+        y: a.z * b.x - a.x * b.z,
+        z: a.x * b.y - a.y * b.x
+      };
+    }
+
+    function dot(a, b) {
+      return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
+    function wrapAngle(angle) {
+      while (angle > Math.PI) angle -= Math.PI * 2;
+      while (angle < -Math.PI) angle += Math.PI * 2;
+      return angle;
+    }
+
+    function lerpAngle(current, target, rate) {
+      const delta = wrapAngle(target - current);
+      return current + delta * rate;
+    }
+
+    function distanceSquared(x1, z1, x2, z2) {
+      const dx = x1 - x2;
+      const dz = z1 - z2;
+      return dx * dx + dz * dz;
+    }
+
+    function distance2D(x1, z1, x2, z2) {
+      return Math.hypot(x1 - x2, z1 - z2);
+    }
+
+    function ensureAudio() {
+      if (!audioContext) {
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtor) {
+          audioContext = new AudioCtor();
+        }
+      }
+      if (audioContext && audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+      return audioContext;
+    }
+
+    function normalizeControlKey(event) {
+      const code = event.code || "";
+      const key = (event.key || "").toLowerCase();
+      if (code === "Digit1" || code === "Numpad1" || key === "1") return "1";
+      if (code === "Digit2" || code === "Numpad2" || key === "2") return "2";
+      if (code === "Digit6" || code === "Numpad6" || key === "6") return "6";
+      if (code === "Digit7" || code === "Numpad7" || key === "7") return "7";
+      return key;
+    }
+
+    function playSound(type) {
+      const ctxAudio = ensureAudio();
+      if (!ctxAudio) {
+        return;
+      }
+      const now = ctxAudio.currentTime;
+      const osc = ctxAudio.createOscillator();
+      const gain = ctxAudio.createGain();
+      const filter = ctxAudio.createBiquadFilter();
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctxAudio.destination);
+      filter.type = "lowpass";
+      filter.frequency.value = 1800;
+      gain.gain.setValueAtTime(0.0001, now);
+
+      if (type === "shoot") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+      } else if (type === "jump") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+      } else if (type === "kick") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.1, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      } else if (type === "hurt") {
+        osc.type = "square";
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.11, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+      } else if (type === "blackhole") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(90, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.7);
+        filter.frequency.setValueAtTime(900, now);
+        filter.frequency.exponentialRampToValueAtTime(240, now + 0.7);
+        gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.75);
+      } else if (type === "dragonRoar") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(92, now);
+        osc.frequency.exponentialRampToValueAtTime(48, now + 0.5);
+        filter.frequency.setValueAtTime(700, now);
+        filter.frequency.exponentialRampToValueAtTime(280, now + 0.55);
+        gain.gain.exponentialRampToValueAtTime(0.24, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+      } else {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(180, now);
+        gain.gain.exponentialRampToValueAtTime(0.06, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+      }
+
+      osc.start(now);
+      osc.stop(now + 0.8);
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    function createCharacterCards() {
+      charactersRoot.innerHTML = "";
+      CHARACTERS.forEach((character, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "character-card" + (index === selectedCharacterIndex ? " active" : "");
+        button.innerHTML = [
+          `<div class="swatch" style="background: linear-gradient(135deg, ${character.tunic}, ${character.leggings});"></div>`,
+          `<h3>${character.name}</h3>`,
+          `<p>${character.description}</p>`
+        ].join("");
+        button.addEventListener("click", () => {
+          selectedCharacterIndex = index;
+          player.style = CHARACTERS[index];
+          createCharacterCards();
+          updateStatus();
+        });
+        charactersRoot.appendChild(button);
+      });
+    }
+    function normalizeRemoteState(peerId, state) {
+      return {
+        peerId,
+        x: state.x ?? WORLD_SIZE * 0.5,
+        y: state.y ?? 0,
+        z: state.z ?? WORLD_SIZE * 0.5,
+        facing: state.facing ?? 0,
+        radius: PLAYER_RADIUS,
+        height: PLAYER_HEIGHT,
+        username: state.username || "Remote",
+        style: getCharacterById(state.characterId),
+        hp: state.hp ?? 10,
+        maxHp: state.maxHp ?? 10,
+        defeated: !!state.defeated,
+        flyMode: !!state.flyMode,
+        attack: state.attack || null
+      };
+    }
+
+    function listRemotePlayers() {
+      return Array.from(multiplayer.remotePlayers.values());
+    }
+
+    function upsertRemotePlayer(peerId, state) {
+      if (!peerId || !state) {
+        return;
+      }
+      multiplayer.remotePlayers.set(peerId, normalizeRemoteState(peerId, state));
+    }
+
+    function removeRemotePlayer(peerId) {
+      if (!peerId) {
+        return;
+      }
+      multiplayer.remotePlayers.delete(peerId);
+    }
+
+    function replaceRemotePlayers(players) {
+      multiplayer.remotePlayers.clear();
+      for (const entry of players || []) {
+        if (!entry || !entry.peerId || entry.peerId === multiplayer.localPeerId) {
+          continue;
+        }
+        upsertRemotePlayer(entry.peerId, entry);
+      }
+    }
+
+    function getOnlinePlayerCount() {
+      return 1 + multiplayer.remotePlayers.size;
+    }
+
+    function sendToClient(peerId, message) {
+      const connection = multiplayer.hostConnections.get(peerId);
+      if (connection && connection.open) {
+        connection.send(message);
+      }
+    }
+
+    function broadcastToClients(buildMessage) {
+      for (const [peerId, connection] of multiplayer.hostConnections.entries()) {
+        if (!connection || !connection.open) {
+          continue;
+        }
+        const payload = typeof buildMessage === "function" ? buildMessage(peerId) : buildMessage;
+        if (payload) {
+          connection.send(payload);
+        }
+      }
+    }
+
+    function buildClientPlayerList(excludePeerId = null) {
+      const players = [{ peerId: multiplayer.roomCode || "host", ...serializeLocalPlayer() }];
+      for (const remote of listRemotePlayers()) {
+        if (excludePeerId && remote.peerId === excludePeerId) {
+          continue;
+        }
+        players.push({
+          peerId: remote.peerId,
+          x: remote.x,
+          y: remote.y,
+          z: remote.z,
+          facing: remote.facing,
+          username: remote.username,
+          characterId: remote.style.id,
+          hp: remote.hp,
+          maxHp: remote.maxHp,
+          defeated: remote.defeated,
+          flyMode: remote.flyMode,
+          attack: remote.attack || null
+        });
+      }
+      return players;
+    }
+    function getCharacterById(id) {
+      return CHARACTERS.find((character) => character.id === id) || CHARACTERS[0];
+    }
+
+    function preparePlayerIdentity() {
+      player.style = CHARACTERS[selectedCharacterIndex];
+      player.username = (usernameInput.value || "").trim() || "Player";
+    }
+
+    function serializeLocalPlayer() {
+      return {
+        x: player.x,
+        y: player.y,
+        z: player.z,
+        facing: player.facing,
+        username: player.username,
+        characterId: player.style.id,
+        hp: player.hp,
+        maxHp: player.maxHp,
+        defeated: player.defeated,
+        flyMode: player.flyMode,
+        attack: player.attack ? { key: player.attack.key, label: player.attack.label } : null
+      };
+    }
+
+    function sendToPeer(message) {
+      if (multiplayer.connection && multiplayer.connection.open) {
+        multiplayer.connection.send(message);
+      }
+    }
+
+    function serializeAnimals() {
+      return animals.map((animal) => ({
+        id: animal.id,
+        x: animal.x,
+        z: animal.z,
+        facing: animal.facing,
+        hp: animal.hp,
+        dead: animal.dead,
+        deadTimer: animal.deadTimer,
+        hitFlash: animal.hitFlash,
+        state: animal.state,
+        aggressiveTimer: animal.aggressiveTimer,
+        attackCooldown: animal.attackCooldown
+      }));
+    }
+
+    function applyWorldSnapshot(packet) {
+      if (!packet) {
+        return;
+      }
+      if (packet.seed && packet.seed !== worldSeed) {
+        generateWorld(packet.seed);
+      }
+      replaceRemotePlayers(packet.players || []);
+      mapDestroyed = !!packet.mapDestroyed;
+      if (mapDestroyed) {
+        trees.length = 0;
+        rocks.length = 0;
+        grassPatches.length = 0;
+      } else if (trees.length === 0 && rocks.length === 0 && grassPatches.length === 0) {
+        generateWorld(packet.seed || worldSeed);
+      }
+      blackHole = packet.blackHole ? { ...packet.blackHole } : null;
+      const animalsById = new Map(animals.map((animal) => [animal.id, animal]));
+      for (const snapshot of packet.animals || []) {
+        const animal = animalsById.get(snapshot.id);
+        if (!animal) {
+          continue;
+        }
+        animal.x = snapshot.x;
+        animal.z = snapshot.z;
+        animal.facing = snapshot.facing;
+        animal.hp = snapshot.hp;
+        animal.dead = snapshot.dead;
+        animal.deadTimer = snapshot.deadTimer;
+        animal.hitFlash = snapshot.hitFlash;
+        animal.state = snapshot.state;
+        animal.aggressiveTimer = snapshot.aggressiveTimer;
+        animal.attackCooldown = snapshot.attackCooldown;
+      }
+    }
+
+    function resetMultiplayer(mode = "solo") {
+      if (multiplayer.connection) {
+        try {
+          multiplayer.connection.close();
+        } catch (error) {
+        }
+      }
+      for (const connection of multiplayer.hostConnections.values()) {
+        try {
+          connection.close();
+        } catch (error) {
+        }
+      }
+      if (multiplayer.peer) {
+        try {
+          multiplayer.peer.destroy();
+        } catch (error) {
+        }
+      }
+      multiplayer.mode = mode;
+      multiplayer.peer = null;
+      multiplayer.connection = null;
+      multiplayer.hostConnections = new Map();
+      multiplayer.connected = false;
+      multiplayer.remotePlayers.clear();
+      multiplayer.sendTimer = 0;
+      multiplayer.worldTimer = 0;
+      multiplayer.shareUrl = "";
+      multiplayer.localPeerId = "";
+      if (mode === "solo") {
+        multiplayer.roomCode = "";
+      }
+    }
+
+    function beginGameSession(mode, seed, preserveNetwork = false) {
+      preparePlayerIdentity();
+      if (!preserveNetwork) {
+        resetMultiplayer(mode);
+      }
+      multiplayer.mode = mode;
+      gameStarted = true;
+      jumpQueued = false;
+      keys.clear();
+      respawnPlayer();
+      generateWorld(seed);
+      menu.classList.add("hidden");
+      updateStatus();
+    }
+
+    function applyPeerAnimalDamage(message) {
+      const animal = animals.find((entry) => entry.id === message.animalId);
+      if (!animal || animal.dead) {
+        return;
+      }
+      animal.hp = Math.max(0, animal.hp - (Number(message.damage) || 0));
+      animal.hitFlash = 0.34;
+      animal.state = "aggressive";
+      animal.aggressiveTimer = 5;
+      animal.attackCooldown = 0.55;
+      const knockback = Number(message.knockback) || 0;
+      const facing = Number(message.facing) || 0;
+      if (knockback > 0) {
+        const nextX = clamp(animal.x + Math.sin(facing) * knockback, animal.radius, WORLD_SIZE - animal.radius);
+        const nextZ = clamp(animal.z - Math.cos(facing) * knockback, animal.radius, WORLD_SIZE - animal.radius);
+        if (!collidesWithObstacle(nextX, nextZ, animal.radius, animal)) {
+          animal.x = nextX;
+          animal.z = nextZ;
+        }
+      }
+      if (animal.hp <= 0) {
+        animal.dead = true;
+        animal.deadTimer = 2.2;
+      }
+    }
+
+    function getHostPeerId() {
+      return multiplayer.roomCode || "host";
+    }
+
+    function getLocalPeerId() {
+      return multiplayer.localPeerId || getHostPeerId();
+    }
+
+    function findBestPlayerTarget(maxRange, maxAngle, originX = player.x, originZ = player.z, facing = player.facing) {
+      let bestTarget = null;
+      let bestDistance = maxRange;
+      for (const remote of listRemotePlayers()) {
+        if (remote.defeated) {
+          continue;
+        }
+        const dist = distance2D(originX, originZ, remote.x, remote.z);
+        if (dist > bestDistance) {
+          continue;
+        }
+        const angle = wrapAngle(Math.atan2(remote.x - originX, -(remote.z - originZ)) - facing);
+        if (Math.abs(angle) > maxAngle) {
+          continue;
+        }
+        bestTarget = remote;
+        bestDistance = dist;
+      }
+      return bestTarget;
+    }
+
+    function applyHostedPlayerHit(targetPeerId, damage, force = false) {
+      const hitAmount = Number(damage) || 0;
+      if (!targetPeerId || hitAmount <= 0) {
+        return;
+      }
+      if (targetPeerId === getHostPeerId()) {
+        damagePlayer(hitAmount, force);
+        return;
+      }
+      if (force) {
+        const remote = multiplayer.remotePlayers.get(targetPeerId);
+        if (remote) {
+          remote.hp = 0;
+          remote.defeated = true;
+        }
+      }
+      sendToClient(targetPeerId, { type: "player-damage", amount: hitAmount, force });
+    }
+    function handlePeerMessage(message, senderId = null) {
+      if (!message || typeof message !== "object") {
+        return;
+      }
+      if (message.type === "join-request" && multiplayer.mode === "host") {
+        upsertRemotePlayer(senderId, message.player);
+        sendToClient(senderId, {
+          type: "world-init",
+          seed: worldSeed,
+          roomCode: multiplayer.roomCode,
+          players: buildClientPlayerList(senderId)
+        });
+        setMenuMessage(`Hosting ${multiplayer.roomCode} for ${getOnlinePlayerCount()} players. Share link: ${multiplayer.shareUrl}`);
+        updateStatus();
+        return;
+      }
+      if (message.type === "world-init" && multiplayer.mode === "client") {
+        multiplayer.roomCode = message.roomCode || multiplayer.roomCode;
+        roomInput.value = multiplayer.roomCode;
+        if (!gameStarted) {
+          beginGameSession("client", message.seed || hashStringToSeed(multiplayer.roomCode), true);
+        }
+        replaceRemotePlayers(message.players || []);
+        setMenuMessage(`Connected to ${multiplayer.roomCode} with ${getOnlinePlayerCount()} players.`);
+        updateStatus();
+        return;
+      }
+      if (message.type === "player-state" && multiplayer.mode === "host") {
+        upsertRemotePlayer(senderId, message.player);
+        return;
+      }
+      if (message.type === "world-state" && multiplayer.mode === "client") {
+        applyWorldSnapshot(message);
+        updateStatus();
+        return;
+      }
+      if (message.type === "animal-damage" && multiplayer.mode === "host") {
+        applyPeerAnimalDamage(message);
+        return;
+      }
+      if (message.type === "player-hit" && multiplayer.mode === "host") {
+        applyHostedPlayerHit(message.targetPeerId, message.damage, !!message.force);
+        return;
+      }
+      if (message.type === "player-damage" && multiplayer.mode === "client") {
+        damagePlayer(Number(message.amount) || 0, !!message.force);
+        return;
+      }
+      if (message.type === "secret-weapon" && multiplayer.mode === "host" && message.player) {
+        triggerBlackHoleWeapon(message.player);
+      }
+    }
+    function attachPeerConnection(connection, isHost) {
+      if (isHost) {
+        multiplayer.hostConnections.set(connection.peer, connection);
+      } else {
+        multiplayer.connection = connection;
+      }
+      connection.on("open", () => {
+        multiplayer.connected = isHost ? multiplayer.hostConnections.size > 0 : true;
+        multiplayer.sendTimer = 0;
+        multiplayer.worldTimer = 0;
+        if (isHost) {
+          setMenuMessage(`Hosting ${multiplayer.roomCode} for ${getOnlinePlayerCount()} players. Share link: ${multiplayer.shareUrl}`);
+        } else {
+          setMenuMessage(`Joined ${multiplayer.roomCode}. Waiting for world sync...`);
+          sendToPeer({ type: "join-request", player: serializeLocalPlayer() });
+        }
+        updateStatus();
+      });
+      connection.on("data", (message) => handlePeerMessage(message, isHost ? connection.peer : null));
+      connection.on("close", () => {
+        if (isHost) {
+          multiplayer.hostConnections.delete(connection.peer);
+          removeRemotePlayer(connection.peer);
+          multiplayer.connected = multiplayer.hostConnections.size > 0;
+          setMenuMessage(`Hosting ${multiplayer.roomCode} for ${getOnlinePlayerCount()} players. Share link: ${multiplayer.shareUrl}`);
+        } else {
+          multiplayer.connected = false;
+          multiplayer.connection = null;
+          multiplayer.remotePlayers.clear();
+          setMenuMessage(`Disconnected from ${multiplayer.roomCode}.`);
+        }
+        updateStatus();
+      });
+      connection.on("error", (error) => {
+        setMenuMessage(`Connection error: ${error.type || error.message || "unknown"}`);
+      });
+    }
+
+    function startSoloGame() {
+      const seed = hashStringToSeed(`${Date.now()}-${usernameInput.value || "solo"}`);
+      beginGameSession("solo", seed);
+      setMenuMessage("Solo mode ready.");
+    }
+
+    function startHostGame() {
+      if (!window.Peer) {
+        setMenuMessage("Online mode could not load the PeerJS client.");
+        return;
+      }
+      const roomCode = sanitizeRoomCode(roomInput.value) || `forest-${Math.floor(Date.now() % 1000000)}`;
+      roomInput.value = roomCode;
+      multiplayer.roomCode = roomCode;
+      multiplayer.shareUrl = `${window.location.href.split("?")[0]}?join=${encodeURIComponent(roomCode)}`;
+      const seed = hashStringToSeed(roomCode);
+      beginGameSession("host", seed);
+      multiplayer.roomCode = roomCode;
+      multiplayer.shareUrl = `${window.location.href.split("?")[0]}?join=${encodeURIComponent(roomCode)}`;
+      multiplayer.localPeerId = roomCode;
+      const peer = new window.Peer(roomCode);
+      multiplayer.peer = peer;
+      setMenuMessage(`Hosting ${roomCode} for 1 player. Share link: ${multiplayer.shareUrl}`);
+      peer.on("connection", (connection) => {
+        attachPeerConnection(connection, true);
+      });
+      peer.on("error", (error) => {
+        setMenuMessage(`Host error: ${error.type || error.message || "unknown"}`);
+      });
+    }
+
+    function startJoinGame() {
+      if (!window.Peer) {
+        setMenuMessage("Online mode could not load the PeerJS client.");
+        return;
+      }
+      preparePlayerIdentity();
+      const roomCode = sanitizeRoomCode(roomInput.value || multiplayer.joinCode);
+      if (!roomCode) {
+        setMenuMessage("Enter a room code first.");
+        return;
+      }
+      resetMultiplayer("client");
+      multiplayer.mode = "client";
+      multiplayer.roomCode = roomCode;
+      roomInput.value = roomCode;
+      const peer = new window.Peer();
+      multiplayer.peer = peer;
+      setMenuMessage(`Joining ${roomCode}...`);
+      peer.on("open", () => {
+        multiplayer.localPeerId = peer.id;
+        attachPeerConnection(peer.connect(roomCode, { reliable: true }), false);
+      });
+      peer.on("error", (error) => {
+        setMenuMessage(`Join error: ${error.type || error.message || "unknown"}`);
+      });
+    }
+
+    function updateMultiplayer(deltaTime) {
+      if (!gameStarted) {
+        return;
+      }
+      if (multiplayer.mode === "client") {
+        if (!multiplayer.connected || !multiplayer.connection) {
+          return;
+        }
+        multiplayer.sendTimer += deltaTime;
+        if (multiplayer.sendTimer >= 0.08) {
+          sendToPeer({ type: "player-state", player: serializeLocalPlayer() });
+          multiplayer.sendTimer = 0;
+        }
+        return;
+      }
+      if (multiplayer.mode === "host") {
+        if (multiplayer.hostConnections.size === 0) {
+          return;
+        }
+        multiplayer.worldTimer += deltaTime;
+        if (multiplayer.worldTimer >= 0.12) {
+          broadcastToClients((peerId) => ({
+            type: "world-state",
+            seed: worldSeed,
+            players: buildClientPlayerList(peerId),
+            animals: serializeAnimals(),
+            blackHole,
+            mapDestroyed
+          }));
+          multiplayer.worldTimer = 0;
+        }
+      }
+    }
+    function updateStatus() {
+      const character = CHARACTERS[selectedCharacterIndex];
+      if (!gameStarted) {
+        statusText.textContent = `Selected: ${character.name}. Press Start Game to begin.`;
+        return;
+      }
+
+      const livingAnimals = animals.filter((animal) => !animal.dead).length;
+      const dragon = animals.find((animal) => animal.type.id === DRAGON_BOSS.id);
+      const dragonStatus = dragon && !dragon.dead ? ` | Dragon ${dragon.hp.toFixed(1)}/${dragon.maxHp}` : " | Dragon down";
+      let mode = "Ready";
+      if (player.flyMode) {
+        mode = "Flying";
+      }
+      if (blackHole) {
+        mode = "Black Hole";
+      }
+      if (player.defeated) {
+        mode = "Defeated - press R";
+      } else if (player.attack) {
+        mode = player.attack.label;
+      }
+      const roomStatus = multiplayer.roomCode ? ` | Room ${multiplayer.roomCode}` : "";
+      const onlinePlayers = multiplayer.mode === "solo" ? "" : ` ${getOnlinePlayerCount()}P`;
+      const onlineStatus = multiplayer.mode === "solo" ? "" : multiplayer.connected ? ` | Online${onlinePlayers}${roomStatus}` : multiplayer.mode === "host" ? ` | Hosting${onlinePlayers}${roomStatus}` : ` | Connecting${onlinePlayers}${roomStatus}`;
+      statusText.textContent = `${player.username} | ${character.name} | HP ${player.hp}/${player.maxHp} | Animals ${livingAnimals}${dragonStatus} | AK67 ${player.gunAmmo} | ${mode}${onlineStatus}`;
+    }
+
+    function respawnPlayer() {
+      player.x = WORLD_SIZE / 2;
+      player.y = 0;
+      player.z = WORLD_SIZE / 2;
+      player.vy = 0;
+      player.facing = 0;
+      player.onGround = true;
+      player.stepPhase = 0;
+      player.hp = player.maxHp;
+      player.invuln = 0;
+      player.hitFlash = 0;
+      player.defeated = false;
+      player.attack = null;
+      player.flyMode = false;
+      player.gunAmmo = 67;
+      player.gunCooldown = 0;
+      player.tracer = null;
+      player.secretCooldown = 0;
+      blackHole = null;
+      mapDestroyed = false;
+      camera.yaw = 0;
+      camera.pitch = 0.34;
+      camera.distance = 9.8;
+    }
+
+    function positionBlocked(x, z, radius) {
+      for (const tree of trees) {
+        const minDistance = radius + tree.trunkRadius + 1.0;
+        if (distanceSquared(x, z, tree.x, tree.z) < minDistance * minDistance) {
+          return true;
+        }
+      }
+      for (const rock of rocks) {
+        const minDistance = radius + rock.radius + 0.7;
+        if (distanceSquared(x, z, rock.x, rock.z) < minDistance * minDistance) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function collidesWithObstacle(nextX, nextZ, radius, ignoreAnimal = null) {
+      if (nextX < radius || nextZ < radius || nextX > WORLD_SIZE - radius || nextZ > WORLD_SIZE - radius) {
+        return true;
+      }
+
+      for (const tree of trees) {
+        const minDistance = radius + tree.trunkRadius + 0.4;
+        if (distanceSquared(nextX, nextZ, tree.x, tree.z) < minDistance * minDistance) {
+          return true;
+        }
+      }
+
+      for (const rock of rocks) {
+        const minDistance = radius + rock.radius + 0.25;
+        if (distanceSquared(nextX, nextZ, rock.x, rock.z) < minDistance * minDistance) {
+          return true;
+        }
+      }
+
+      for (const animal of animals) {
+        if (animal === ignoreAnimal || animal.dead) {
+          continue;
+        }
+        const minDistance = radius + animal.radius + 0.08;
+        if (distanceSquared(nextX, nextZ, animal.x, animal.z) < minDistance * minDistance) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function createAnimal(template, x, z) {
+      return {
+        id: nextAnimalId += 1,
+        type: template,
+        x,
+        y: 0,
+        z,
+        radius: template.radius,
+        height: template.height,
+        hp: template.hp,
+        maxHp: template.hp,
+        damage: template.damage,
+        speed: template.speed,
+        facing: randRange(-Math.PI, Math.PI),
+        hitFlash: 0,
+        attackCooldown: randRange(0.2, 1.2),
+        state: "wander",
+        wanderTimer: randRange(0.8, 2.5),
+        targetX: x,
+        targetZ: z,
+        dead: false,
+        deadTimer: 0,
+        aggressiveTimer: 0,
+        roarCooldown: randRange(1.4, 3.2)
+      };
+    }
+
+    function generateWorld(seed = worldSeed) {
+      setWorldSeed(seed);
+      nextAnimalId = 0;
+      trees.length = 0;
+      rocks.length = 0;
+      animals.length = 0;
+      grassPatches.length = 0;
+      blackHole = null;
+      mapDestroyed = false;
+
+      let attempts = 0;
+      while (trees.length < TREE_COUNT && attempts < 40000) {
+        attempts += 1;
+        const x = randRange(3, WORLD_SIZE - 3);
+        const z = randRange(3, WORLD_SIZE - 3);
+        const trunkRadius = randRange(0.28, 0.48);
+        const trunkHeight = randRange(1.8, 2.7);
+        const crownRadius = randRange(1.0, 1.75);
+        if (distanceSquared(x, z, player.x, player.z) < 900) {
+          continue;
+        }
+        if (positionBlocked(x, z, crownRadius)) {
+          continue;
+        }
+        trees.push({
+          x,
+          z,
+          trunkRadius,
+          trunkHeight,
+          crownRadius,
+          leafA: gameRandom() > 0.5 ? "#356f3c" : "#3f8650",
+          leafB: gameRandom() > 0.5 ? "#244d2b" : "#2f6a39"
+        });
+      }
+
+      attempts = 0;
+      while (rocks.length < ROCK_COUNT && attempts < 18000) {
+        attempts += 1;
+        const x = randRange(3, WORLD_SIZE - 3);
+        const z = randRange(3, WORLD_SIZE - 3);
+        const radius = randRange(0.55, 1.4);
+        if (distanceSquared(x, z, player.x, player.z) < 700) {
+          continue;
+        }
+        if (positionBlocked(x, z, radius + 0.4)) {
+          continue;
+        }
+        rocks.push({
+          x,
+          z,
+          radius,
+          height: randRange(0.7, 1.9),
+          tintA: gameRandom() > 0.5 ? "#8d918f" : "#757b7d",
+          tintB: gameRandom() > 0.5 ? "#616768" : "#575b5f",
+          seed: gameRandom() * 100
+        });
+      }
+
+      for (let i = 0; i < GRASS_PATCH_COUNT; i += 1) {
+        grassPatches.push({
+          x: randRange(2, WORLD_SIZE - 2),
+          z: randRange(2, WORLD_SIZE - 2),
+          radius: randRange(0.8, 2.2),
+          tone: gameRandom() > 0.5 ? "rgba(74, 129, 58, 0.28)" : "rgba(96, 154, 72, 0.22)"
+        });
+      }
+
+      attempts = 0;
+      while (animals.length < ANIMAL_COUNT && attempts < 20000) {
+        attempts += 1;
+        const template = ANIMAL_TYPES[Math.floor(gameRandom() * ANIMAL_TYPES.length)];
+        const x = randRange(4, WORLD_SIZE - 4);
+        const z = randRange(4, WORLD_SIZE - 4);
+        if (distanceSquared(x, z, player.x, player.z) < 1600) {
+          continue;
+        }
+        if (positionBlocked(x, z, template.radius + 0.6)) {
+          continue;
+        }
+        animals.push(createAnimal(template, x, z));
+      }
+
+      attempts = 0;
+      while (attempts < 8000) {
+        attempts += 1;
+        const x = randRange(20, WORLD_SIZE - 20);
+        const z = randRange(20, WORLD_SIZE - 20);
+        if (distanceSquared(x, z, player.x, player.z) < 6400) {
+          continue;
+        }
+        if (positionBlocked(x, z, DRAGON_BOSS.radius + 1.2)) {
+          continue;
+        }
+        animals.push(createAnimal(DRAGON_BOSS, x, z));
+        break;
+      }
+    }
+
+    function startAttack(key) {
+      if (!gameStarted || player.defeated || player.attack) {
+        return;
+      }
+      const spec = ATTACKS[key];
+      player.attack = {
+        key: spec.key,
+        label: spec.label,
+        duration: spec.duration,
+        hitAt: spec.hitAt,
+        damage: spec.damage,
+        range: spec.range,
+        arc: spec.arc,
+        knockback: spec.knockback,
+        timer: 0,
+        hitApplied: false
+      };
+      playSound("kick");
+      updateStatus();
+    }
+
+    function applyAttackHit(attack) {
+      for (const animal of animals) {
+        if (animal.dead) {
+          continue;
+        }
+        const dist = distance2D(player.x, player.z, animal.x, animal.z);
+        if (dist > attack.range + animal.radius) {
+          continue;
+        }
+        const angle = wrapAngle(Math.atan2(animal.x - player.x, -(animal.z - player.z)) - player.facing);
+        if (Math.abs(angle) > attack.arc * 0.5) {
+          continue;
+        }
+
+        animal.hp = Math.max(0, animal.hp - attack.damage);
+        animal.hitFlash = 0.28;
+        animal.state = "aggressive";
+        animal.aggressiveTimer = 4;
+        animal.attackCooldown = 0.45;
+        if (animal.type.boss) {
+          animal.roarCooldown = 0;
+        }
+        const knockX = Math.sin(player.facing) * attack.knockback;
+        const knockZ = -Math.cos(player.facing) * attack.knockback;
+        const nextX = clamp(animal.x + knockX, animal.radius, WORLD_SIZE - animal.radius);
+        const nextZ = clamp(animal.z + knockZ, animal.radius, WORLD_SIZE - animal.radius);
+        if (!collidesWithObstacle(nextX, nextZ, animal.radius, animal)) {
+          animal.x = nextX;
+          animal.z = nextZ;
+        }
+        if (animal.hp <= 0) {
+          animal.dead = true;
+          animal.deadTimer = 2.2;
+        }
+      }
+
+      const playerTarget = findBestPlayerTarget(attack.range + 0.2, attack.arc * 0.5);
+      if (playerTarget) {
+        if (multiplayer.mode === "client") {
+          sendToPeer({ type: "player-hit", targetPeerId: playerTarget.peerId, damage: attack.damage });
+        } else {
+          applyHostedPlayerHit(playerTarget.peerId, attack.damage);
+        }
+      }
+      updateStatus();
+    }
+    function damagePlayer(amount, force = false) {
+      if ((!force && player.invuln > 0) || player.defeated) {
+        return;
+      }
+      if (force) {
+        player.invuln = 0;
+      }
+      player.hp = Math.max(0, player.hp - amount);
+      player.invuln = force ? 0 : 0.8;
+      player.hitFlash = 0.35;
+      if (player.hp <= 0) {
+        player.defeated = true;
+        player.attack = null;
+      }
+      playSound("hurt");
+      updateStatus();
+    }
+
+    function shootAK67() {
+      if (!gameStarted || player.defeated || player.gunCooldown > 0 || player.gunAmmo <= 0) {
+        return;
+      }
+      playSound("shoot");
+      player.gunAmmo -= 1;
+      player.gunCooldown = 0.14;
+
+      const muzzleX = player.x + Math.sin(player.facing) * 0.45;
+      const muzzleZ = player.z - Math.cos(player.facing) * 0.45;
+      const maxRange = 28;
+      let bestAnimal = null;
+      let bestAnimalDistance = maxRange;
+
+      for (const animal of animals) {
+        if (animal.dead) {
+          continue;
+        }
+        const dist = distance2D(muzzleX, muzzleZ, animal.x, animal.z);
+        if (dist > bestAnimalDistance) {
+          continue;
+        }
+        const angle = wrapAngle(Math.atan2(animal.x - muzzleX, -(animal.z - muzzleZ)) - player.facing);
+        if (Math.abs(angle) > 0.22) {
+          continue;
+        }
+        bestAnimal = animal;
+        bestAnimalDistance = dist;
+      }
+
+      const bestPlayer = findBestPlayerTarget(maxRange, 0.22, muzzleX, muzzleZ, player.facing);
+      const bestPlayerDistance = bestPlayer ? distance2D(muzzleX, muzzleZ, bestPlayer.x, bestPlayer.z) : Infinity;
+      const tracerTarget = {
+        x: muzzleX + Math.sin(player.facing) * maxRange,
+        y: 1.35 + player.y,
+        z: muzzleZ - Math.cos(player.facing) * maxRange
+      };
+
+      if (bestPlayer && bestPlayerDistance <= bestAnimalDistance) {
+        tracerTarget.x = bestPlayer.x;
+        tracerTarget.y = bestPlayer.y + bestPlayer.height * 0.72;
+        tracerTarget.z = bestPlayer.z;
+        if (multiplayer.mode === "client") {
+          sendToPeer({ type: "player-hit", targetPeerId: bestPlayer.peerId, damage: 6.7 });
+        } else {
+          applyHostedPlayerHit(bestPlayer.peerId, 6.7);
+        }
+      } else if (bestAnimal) {
+        bestAnimal.hp = Math.max(0, bestAnimal.hp - 6.7);
+        bestAnimal.hitFlash = 0.34;
+        bestAnimal.state = "aggressive";
+        bestAnimal.aggressiveTimer = 5;
+        bestAnimal.attackCooldown = 0.55;
+        if (bestAnimal.type.boss) {
+          bestAnimal.roarCooldown = 0;
+        }
+        tracerTarget.x = bestAnimal.x;
+        tracerTarget.y = bestAnimal.height * 0.72;
+        tracerTarget.z = bestAnimal.z;
+        const knockX = Math.sin(player.facing) * 1.8;
+        const knockZ = -Math.cos(player.facing) * 1.8;
+        const nextX = clamp(bestAnimal.x + knockX, bestAnimal.radius, WORLD_SIZE - bestAnimal.radius);
+        const nextZ = clamp(bestAnimal.z + knockZ, bestAnimal.radius, WORLD_SIZE - bestAnimal.radius);
+        if (!collidesWithObstacle(nextX, nextZ, bestAnimal.radius, bestAnimal)) {
+          bestAnimal.x = nextX;
+          bestAnimal.z = nextZ;
+        }
+        if (bestAnimal.hp <= 0) {
+          bestAnimal.dead = true;
+          bestAnimal.deadTimer = 2.2;
+        }
+      }
+
+      player.tracer = {
+        timer: 0.08,
+        from: { x: muzzleX, y: 1.35 + player.y, z: muzzleZ },
+        to: tracerTarget
+      };
+      updateStatus();
+    }
+    function triggerBlackHoleWeapon(originState = null) {
+      if (!gameStarted || blackHole) {
+        return;
+      }
+      if (!originState && (player.defeated || player.secretCooldown > 0)) {
+        return;
+      }
+      const source = originState || { x: player.x, z: player.z, facing: player.facing, peerId: getLocalPeerId() };
+      if (!originState && multiplayer.mode === "client") {
+        player.secretCooldown = 12;
+        sendToPeer({ type: "secret-weapon", player: source });
+        playSound("blackhole");
+        updateStatus();
+        return;
+      }
+      const centerX = clamp(source.x + Math.sin(source.facing) * 8, 12, WORLD_SIZE - 12);
+      const centerZ = clamp(source.z - Math.cos(source.facing) * 8, 12, WORLD_SIZE - 12);
+      const sourcePeerId = source.peerId || getLocalPeerId();
+      blackHole = {
+        x: centerX,
+        y: 0,
+        z: centerZ,
+        timer: 10,
+        phase: 0,
+        radius: 7
+      };
+      mapDestroyed = true;
+      if (!originState) {
+        player.secretCooldown = 12;
+        player.attack = null;
+      }
+      for (const animal of animals) {
+        if (animal.dead) {
+          continue;
+        }
+        animal.hitFlash = 0.5;
+        animal.state = "aggressive";
+        animal.aggressiveTimer = 6;
+        animal.attackCooldown = 0.8;
+        if (animal.type.boss) {
+          animal.hp = Math.min(animal.hp, animal.maxHp * 0.5);
+          animal.roarCooldown = 0;
+          animal.dead = false;
+          animal.deadTimer = 0;
+        } else {
+          animal.hp = 0;
+          animal.dead = true;
+          animal.deadTimer = 2.6;
+        }
+      }
+      if (multiplayer.mode !== "solo") {
+        if (sourcePeerId !== getHostPeerId()) {
+          damagePlayer(999, true);
+        }
+        for (const remote of listRemotePlayers()) {
+          if (remote.peerId === sourcePeerId) {
+            continue;
+          }
+          applyHostedPlayerHit(remote.peerId, 999, true);
+        }
+      }
+      trees.length = 0;
+      rocks.length = 0;
+      grassPatches.length = 0;
+      playSound("blackhole");
+      updateStatus();
+    }
+    function updatePlayer(deltaTime) {
+      if (!gameStarted) {
+        jumpQueued = false;
+        return;
+      }
+
+      player.style = CHARACTERS[selectedCharacterIndex];
+      player.invuln = Math.max(0, player.invuln - deltaTime);
+      player.hitFlash = Math.max(0, player.hitFlash - deltaTime);
+      player.gunCooldown = Math.max(0, player.gunCooldown - deltaTime);
+      player.secretCooldown = Math.max(0, player.secretCooldown - deltaTime);
+      if (blackHole) {
+        blackHole.timer -= deltaTime;
+        blackHole.phase += deltaTime * 4;
+        if (blackHole.timer <= 0) {
+          blackHole = null;
+          updateStatus();
+        }
+      }
+      if (player.tracer) {
+        player.tracer.timer -= deltaTime;
+        if (player.tracer.timer <= 0) {
+          player.tracer = null;
+        }
+      }
+      player.flyMode = keys.has("6") && keys.has("7") && !player.defeated;
+      if (keys.has("1") && keys.has("2")) {
+        triggerBlackHoleWeapon();
+      }
+
+      if (player.attack) {
+        player.attack.timer += deltaTime;
+        const hitMoment = player.attack.duration * player.attack.hitAt;
+        if (!player.attack.hitApplied && player.attack.timer >= hitMoment) {
+          applyAttackHit(player.attack);
+          player.attack.hitApplied = true;
+        }
+        if (player.attack.timer >= player.attack.duration) {
+          player.attack = null;
+          updateStatus();
+        }
+      }
+
+      let inputForward = 0;
+      let inputRight = 0;
+      if (keys.has("w") || keys.has("arrowup")) inputForward += 1;
+      if (keys.has("s") || keys.has("arrowdown")) inputForward -= 1;
+      if (keys.has("d") || keys.has("arrowright")) inputRight += 1;
+      if (keys.has("a") || keys.has("arrowleft")) inputRight -= 1;
+
+      if (!player.defeated) {
+        const forwardVector = {
+          x: Math.sin(camera.yaw),
+          z: -Math.cos(camera.yaw)
+        };
+        const rightVector = {
+          x: Math.cos(camera.yaw),
+          z: Math.sin(camera.yaw)
+        };
+
+        let moveX = forwardVector.x * inputForward + rightVector.x * inputRight;
+        let moveZ = forwardVector.z * inputForward + rightVector.z * inputRight;
+        const moveMagnitude = Math.hypot(moveX, moveZ);
+        if (moveMagnitude > 0) {
+          moveX /= moveMagnitude;
+          moveZ /= moveMagnitude;
+          const movementScale = player.attack ? 0.45 : 1;
+          const step = player.style.speed * movementScale * deltaTime;
+          const nextX = clamp(player.x + moveX * step, player.radius, WORLD_SIZE - player.radius);
+          const nextZ = clamp(player.z + moveZ * step, player.radius, WORLD_SIZE - player.radius);
+          const ignoreObstacles = player.flyMode && player.y > 1.4;
+          if (ignoreObstacles || !collidesWithObstacle(nextX, player.z, player.radius)) {
+            player.x = nextX;
+          }
+          if (ignoreObstacles || !collidesWithObstacle(player.x, nextZ, player.radius)) {
+            player.z = nextZ;
+          }
+          const targetFacing = Math.atan2(moveX, -moveZ);
+          player.facing = lerpAngle(player.facing, targetFacing, Math.min(deltaTime * 10, 1));
+          player.stepPhase += deltaTime * (6 + player.style.speed * 0.9);
+        } else {
+          player.stepPhase *= 0.985;
+        }
+
+        if (!player.flyMode && jumpQueued && player.onGround) {
+          player.vy = player.style.jump;
+          player.onGround = false;
+          playSound("jump");
+        }
+      }
+      jumpQueued = false;
+
+      if (player.flyMode) {
+        player.vy = 0;
+        player.y = Math.min(WORLD_HEIGHT, player.y + deltaTime * 12);
+        player.onGround = false;
+      } else {
+        player.vy -= GRAVITY * deltaTime;
+        player.y += player.vy * deltaTime;
+        if (player.y <= 0) {
+          player.y = 0;
+          player.vy = 0;
+          player.onGround = true;
+        }
+      }
+    }
+
+    function updateAnimals(deltaTime) {
+      if (!gameStarted) {
+        return;
+      }
+
+      if (multiplayer.mode === "client") {
+        for (const animal of animals) {
+          animal.hitFlash = Math.max(0, animal.hitFlash - deltaTime);
+          if (animal.dead) {
+            animal.deadTimer = Math.max(0, animal.deadTimer - deltaTime);
+          }
+        }
+        return;
+      }
+
+      for (const animal of animals) {
+        animal.hitFlash = Math.max(0, animal.hitFlash - deltaTime);
+        animal.attackCooldown = Math.max(0, animal.attackCooldown - deltaTime);
+        animal.roarCooldown = Math.max(0, (animal.roarCooldown || 0) - deltaTime);
+
+        if (animal.dead) {
+          animal.deadTimer = Math.max(0, animal.deadTimer - deltaTime);
+          continue;
+        }
+
+        const remoteTargets = multiplayer.mode === "host"
+          ? listRemotePlayers().filter((remote) => !remote.defeated)
+          : [];
+        const distToLocal = distance2D(animal.x, animal.z, player.x, player.z);
+        let targetPlayer = { kind: "local", x: player.x, z: player.z, radius: player.radius, defeated: player.defeated };
+        let distToTarget = distToLocal;
+        for (const remoteTarget of remoteTargets) {
+          const distToRemote = distance2D(animal.x, animal.z, remoteTarget.x, remoteTarget.z);
+          if ((targetPlayer.defeated || !player.defeated) && distToRemote < distToTarget) {
+            targetPlayer = {
+              kind: "remote",
+              peerId: remoteTarget.peerId,
+              x: remoteTarget.x,
+              z: remoteTarget.z,
+              radius: remoteTarget.radius,
+              defeated: remoteTarget.defeated
+            };
+            distToTarget = distToRemote;
+          }
+        }
+
+        const aggroRange = animal.type.boss ? 22 : 12;
+        if (!targetPlayer.defeated && distToTarget < aggroRange) {
+          animal.state = "aggressive";
+          animal.aggressiveTimer = animal.type.boss ? 7 : 4;
+        }
+        animal.aggressiveTimer = Math.max(0, animal.aggressiveTimer - deltaTime);
+        if (animal.state === "aggressive" && animal.aggressiveTimer <= 0 && distToTarget > (animal.type.boss ? 24 : 16)) {
+          animal.state = "wander";
+        }
+        if (animal.type.boss && animal.state === "aggressive" && animal.roarCooldown <= 0) {
+          playSound("dragonRoar");
+          animal.roarCooldown = randRange(3.8, 6.2);
+        }
+
+        let targetX = animal.targetX;
+        let targetZ = animal.targetZ;
+        if (animal.state === "aggressive" && !targetPlayer.defeated) {
+          targetX = targetPlayer.x;
+          targetZ = targetPlayer.z;
+        } else {
+          animal.wanderTimer -= deltaTime;
+          if (animal.wanderTimer <= 0 || distance2D(animal.x, animal.z, animal.targetX, animal.targetZ) < 1.2) {
+            animal.targetX = clamp(animal.x + randRange(-8, 8), 3, WORLD_SIZE - 3);
+            animal.targetZ = clamp(animal.z + randRange(-8, 8), 3, WORLD_SIZE - 3);
+            animal.wanderTimer = randRange(1.6, 3.8);
+          }
+          targetX = animal.targetX;
+          targetZ = animal.targetZ;
+        }
+
+        const moveAngle = Math.atan2(targetX - animal.x, -(targetZ - animal.z));
+        animal.facing = lerpAngle(animal.facing, moveAngle, Math.min(deltaTime * 4, 1));
+        const speedFactor = animal.state === "aggressive" ? 1 : 0.55;
+        const moveSpeed = animal.speed * speedFactor * deltaTime;
+        if (distance2D(animal.x, animal.z, targetX, targetZ) > (animal.state === "aggressive" ? (animal.type.boss ? 2.6 : 1.2) : 0.6)) {
+          const moveX = Math.sin(animal.facing) * moveSpeed;
+          const moveZ = -Math.cos(animal.facing) * moveSpeed;
+          const nextX = clamp(animal.x + moveX, animal.radius, WORLD_SIZE - animal.radius);
+          const nextZ = clamp(animal.z + moveZ, animal.radius, WORLD_SIZE - animal.radius);
+          if (!collidesWithObstacle(nextX, animal.z, animal.radius, animal)) {
+            animal.x = nextX;
+          }
+          if (!collidesWithObstacle(animal.x, nextZ, animal.radius, animal)) {
+            animal.z = nextZ;
+          }
+        }
+
+        if (!targetPlayer.defeated && distToTarget < animal.radius + targetPlayer.radius + (animal.type.boss ? 1.8 : 0.9) && animal.attackCooldown <= 0) {
+          if (targetPlayer.kind === "local") {
+            damagePlayer(animal.damage);
+          } else {
+            sendToClient(targetPlayer.peerId, { type: "player-damage", amount: animal.damage });
+          }
+          animal.attackCooldown = animal.type.boss ? 1.5 : 1.1;
+        }
+      }
+    }
+
+    function buildCamera() {
+      const focus = {
+        x: player.x,
+        y: 1.34 + player.y,
+        z: player.z
+      };
+      const horizontal = Math.cos(camera.pitch) * camera.distance;
+      const cameraPos = {
+        x: focus.x - Math.sin(camera.yaw) * horizontal,
+        y: focus.y + Math.sin(camera.pitch) * camera.distance + 1.15,
+        z: focus.z + Math.cos(camera.yaw) * horizontal
+      };
+      const target = {
+        x: focus.x,
+        y: focus.y + 0.65,
+        z: focus.z
+      };
+      const forward = normalize({
+        x: target.x - cameraPos.x,
+        y: target.y - cameraPos.y,
+        z: target.z - cameraPos.z
+      });
+      const right = normalize(cross(forward, { x: 0, y: 1, z: 0 }));
+      const up = cross(right, forward);
+      const fovRadians = camera.fov * Math.PI / 180;
+      return {
+        pos: cameraPos,
+        forward,
+        right,
+        up,
+        near: 0.1,
+        focal: canvas.height / (2 * Math.tan(fovRadians / 2))
+      };
+    }
+
+    function projectPoint(point, cameraState) {
+      const relative = {
+        x: point.x - cameraState.pos.x,
+        y: point.y - cameraState.pos.y,
+        z: point.z - cameraState.pos.z
+      };
+      const camX = dot(relative, cameraState.right);
+      const camY = dot(relative, cameraState.up);
+      const camZ = dot(relative, cameraState.forward);
+      if (camZ <= cameraState.near) {
+        return null;
+      }
+      const scale = cameraState.focal / camZ;
+      return {
+        x: canvas.width * 0.5 + camX * scale,
+        y: canvas.height * 0.5 - camY * scale,
+        scale,
+        depth: camZ
+      };
+    }
+
+    function fillPolygon(points, fillStyle, strokeStyle, lineWidth = null) {
+      if (points.length < 3 || points.some((point) => !point)) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i += 1) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+      if (strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth ?? Math.max(1, canvas.width / 1000);
+        ctx.stroke();
+      }
+    }
+
+    function drawCircleProjected(center, radius, color, strokeStyle = null) {
+      if (!center) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      if (strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = Math.max(1, radius * 0.1);
+        ctx.stroke();
+      }
+    }
+    function drawSky() {
+      const width = canvas.width;
+      const height = canvas.height;
+      const horizon = height * 0.44;
+      const skyGradient = ctx.createLinearGradient(0, 0, 0, horizon);
+      skyGradient.addColorStop(0, "#7fc7f8");
+      skyGradient.addColorStop(0.35, "#bfe6ff");
+      skyGradient.addColorStop(0.72, "#edf8ff");
+      skyGradient.addColorStop(1, "#f7fcff");
+      ctx.fillStyle = skyGradient;
+      ctx.fillRect(0, 0, width, horizon);
+
+      const sunGradient = ctx.createRadialGradient(width * 0.8, height * 0.16, 10, width * 0.8, height * 0.16, width * 0.16);
+      sunGradient.addColorStop(0, "rgba(255, 241, 182, 0.95)");
+      sunGradient.addColorStop(0.42, "rgba(255, 241, 182, 0.35)");
+      sunGradient.addColorStop(1, "rgba(255, 241, 182, 0)");
+      ctx.fillStyle = sunGradient;
+      ctx.fillRect(0, 0, width, horizon);
+
+      const mistGradient = ctx.createLinearGradient(0, horizon * 0.6, 0, horizon);
+      mistGradient.addColorStop(0, "rgba(233, 244, 248, 0)");
+      mistGradient.addColorStop(1, "rgba(233, 244, 248, 0.42)");
+      ctx.fillStyle = mistGradient;
+      ctx.fillRect(0, horizon * 0.45, width, horizon * 0.6);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+      drawCloud(width * 0.16, height * 0.12, width * 0.06);
+      drawCloud(width * 0.56, height * 0.14, width * 0.08);
+      drawCloud(width * 0.84, height * 0.11, width * 0.05);
+
+      ctx.fillStyle = "#7d9aa8";
+      for (const ridge of SKYLINE) {
+        ctx.beginPath();
+        ctx.moveTo(width * ridge.x, horizon);
+        ctx.lineTo(width * (ridge.x + ridge.w * 0.2), horizon - height * ridge.h * 0.7);
+        ctx.lineTo(width * (ridge.x + ridge.w * 0.42), horizon - height * ridge.h);
+        ctx.lineTo(width * (ridge.x + ridge.w * 0.72), horizon - height * ridge.h * 0.56);
+        ctx.lineTo(width * (ridge.x + ridge.w), horizon);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    function drawCloud(x, y, radius) {
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 0.72, 0, Math.PI * 2);
+      ctx.arc(x + radius * 0.64, y - radius * 0.16, radius * 0.86, 0, Math.PI * 2);
+      ctx.arc(x + radius * 1.25, y + radius * 0.04, radius * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawGround(cameraState) {
+      const groundGradient = ctx.createLinearGradient(0, canvas.height * 0.44, 0, canvas.height);
+      if (mapDestroyed) {
+        groundGradient.addColorStop(0, "#312c38");
+        groundGradient.addColorStop(0.5, "#1e1a25");
+        groundGradient.addColorStop(1, "#09080d");
+      } else {
+        groundGradient.addColorStop(0, "#7cb55e");
+        groundGradient.addColorStop(0.38, "#6c9c4f");
+        groundGradient.addColorStop(0.72, "#537c3f");
+        groundGradient.addColorStop(1, "#3f5f2f");
+      }
+      ctx.fillStyle = groundGradient;
+      ctx.fillRect(0, canvas.height * 0.44, canvas.width, canvas.height * 0.56);
+
+      const groundStartX = Math.max(0, Math.floor((player.x - GROUND_RENDER_RADIUS) / GROUND_STEP) * GROUND_STEP);
+      const groundEndX = Math.min(WORLD_SIZE, Math.ceil((player.x + GROUND_RENDER_RADIUS) / GROUND_STEP) * GROUND_STEP);
+      const groundStartZ = Math.max(0, Math.floor((player.z - GROUND_RENDER_RADIUS) / GROUND_STEP) * GROUND_STEP);
+      const groundEndZ = Math.min(WORLD_SIZE, Math.ceil((player.z + GROUND_RENDER_RADIUS) / GROUND_STEP) * GROUND_STEP);
+
+      for (let z = groundStartZ; z < groundEndZ; z += GROUND_STEP) {
+        for (let x = groundStartX; x < groundEndX; x += GROUND_STEP) {
+          const corners = [
+            projectPoint({ x, y: 0, z }, cameraState),
+            projectPoint({ x: x + GROUND_STEP, y: 0, z }, cameraState),
+            projectPoint({ x: x + GROUND_STEP, y: 0, z: z + GROUND_STEP }, cameraState),
+            projectPoint({ x, y: 0, z: z + GROUND_STEP }, cameraState)
+          ];
+          if (corners.some((corner) => !corner)) {
+            continue;
+          }
+          const noise = Math.sin(x * 0.045) * 0.22 + Math.cos(z * 0.04) * 0.18 + Math.sin((x + z) * 0.018) * 0.14;
+          const dirt = Math.exp(-Math.pow((z - WORLD_SIZE * 0.48) / 34, 2)) * 0.55 + Math.exp(-Math.pow((x - WORLD_SIZE * 0.3) / 28, 2)) * 0.22;
+          let shade = noise + dirt;
+          let fill = "#648f47";
+          if (shade > 0.55) {
+            fill = "#90724c";
+          } else if (shade > 0.18) {
+            fill = "#708e49";
+          } else if (shade < -0.2) {
+            fill = "#597b3f";
+          }
+          fillPolygon(corners, fill, "rgba(255, 255, 255, 0.025)");
+        }
+      }
+
+      for (const patch of grassPatches) {
+        drawGroundCircle(patch.x, patch.z, patch.radius, cameraState, patch.tone);
+      }
+
+      const boundaryHeight = 1.25;
+      const walls = [
+        [{ x: 0, y: 0.04, z: 0 }, { x: WORLD_SIZE, y: 0.04, z: 0 }, { x: WORLD_SIZE, y: boundaryHeight, z: 0 }, { x: 0, y: boundaryHeight, z: 0 }],
+        [{ x: WORLD_SIZE, y: 0.04, z: 0 }, { x: WORLD_SIZE, y: 0.04, z: WORLD_SIZE }, { x: WORLD_SIZE, y: boundaryHeight, z: WORLD_SIZE }, { x: WORLD_SIZE, y: boundaryHeight, z: 0 }],
+        [{ x: 0, y: 0.04, z: WORLD_SIZE }, { x: WORLD_SIZE, y: 0.04, z: WORLD_SIZE }, { x: WORLD_SIZE, y: boundaryHeight, z: WORLD_SIZE }, { x: 0, y: boundaryHeight, z: WORLD_SIZE }],
+        [{ x: 0, y: 0.04, z: 0 }, { x: 0, y: 0.04, z: WORLD_SIZE }, { x: 0, y: boundaryHeight, z: WORLD_SIZE }, { x: 0, y: boundaryHeight, z: 0 }]
+      ];
+      for (const wall of walls) {
+        const projected = wall.map((point) => projectPoint(point, cameraState));
+        if (projected.some((point) => !point)) {
+          continue;
+        }
+        fillPolygon(projected, "rgba(110, 84, 42, 0.36)", "rgba(255, 236, 190, 0.08)");
+      }
+    }
+
+    function drawGroundCircle(x, z, radius, cameraState, color) {
+      const points = [];
+      const steps = 14;
+      for (let i = 0; i < steps; i += 1) {
+        const angle = i / steps * Math.PI * 2;
+        const point = projectPoint({ x: x + Math.cos(angle) * radius, y: 0.03, z: z + Math.sin(angle) * radius }, cameraState);
+        if (point) {
+          points.push(point);
+        }
+      }
+      fillPolygon(points, color);
+    }
+
+    function drawRock(rock, cameraState) {
+      drawGroundCircle(rock.x, rock.z, rock.radius * 0.85, cameraState, "rgba(0, 0, 0, 0.16)");
+      const top = projectPoint({ x: rock.x, y: rock.height, z: rock.z }, cameraState);
+      if (!top) {
+        return;
+      }
+      const points = [];
+      const steps = 7;
+      for (let i = 0; i < steps; i += 1) {
+        const angle = i / steps * Math.PI * 2 + rock.seed;
+        const radiusScale = 0.78 + (Math.sin(rock.seed * 3.1 + i * 1.73) * 0.5 + 0.5) * 0.34;
+        const heightOffset = 0.08 + (Math.cos(rock.seed * 2.7 + i * 2.11) * 0.5 + 0.5) * 0.18;
+        const edge = projectPoint({
+          x: rock.x + Math.cos(angle) * rock.radius * radiusScale,
+          y: heightOffset,
+          z: rock.z + Math.sin(angle) * rock.radius * radiusScale
+        }, cameraState);
+        if (edge) {
+          points.push(edge);
+        }
+      }
+      fillPolygon(points, rock.tintA, rock.tintB, Math.max(1, top.scale * 0.04));
+      drawCircleProjected(top, Math.max(4, top.scale * rock.radius * 0.55), rock.tintB);
+    }
+
+    function drawTree(tree, cameraState) {
+      drawGroundCircle(tree.x, tree.z, tree.crownRadius * 0.9, cameraState, "rgba(0, 0, 0, 0.16)");
+      const trunkBottom = projectPoint({ x: tree.x, y: 0, z: tree.z }, cameraState);
+      const trunkTop = projectPoint({ x: tree.x, y: tree.trunkHeight, z: tree.z }, cameraState);
+      if (!trunkBottom || !trunkTop) {
+        return;
+      }
+      const trunkWidthBottom = trunkBottom.scale * tree.trunkRadius * 1.25;
+      const trunkWidthTop = trunkTop.scale * tree.trunkRadius * 0.84;
+      fillPolygon([
+        { x: trunkBottom.x - trunkWidthBottom, y: trunkBottom.y },
+        { x: trunkBottom.x + trunkWidthBottom, y: trunkBottom.y },
+        { x: trunkTop.x + trunkWidthTop, y: trunkTop.y },
+        { x: trunkTop.x - trunkWidthTop, y: trunkTop.y }
+      ], "#6b4f2a", "rgba(0, 0, 0, 0.16)");
+
+      const clusters = [
+        { x: tree.x, y: tree.trunkHeight + tree.crownRadius * 0.58, z: tree.z, r: tree.crownRadius },
+        { x: tree.x - tree.crownRadius * 0.34, y: tree.trunkHeight + tree.crownRadius * 0.38, z: tree.z + tree.crownRadius * 0.12, r: tree.crownRadius * 0.72 },
+        { x: tree.x + tree.crownRadius * 0.36, y: tree.trunkHeight + tree.crownRadius * 0.34, z: tree.z - tree.crownRadius * 0.1, r: tree.crownRadius * 0.68 }
+      ];
+      clusters.forEach((cluster, index) => {
+        const center = projectPoint(cluster, cameraState);
+        if (!center) {
+          return;
+        }
+        drawCircleProjected(center, center.scale * cluster.r, index === 0 ? tree.leafA : tree.leafB);
+      });
+    }
+
+    function animalPoint(animal, rightOffset, upOffset, forwardOffset) {
+      const right = { x: Math.cos(animal.facing), z: Math.sin(animal.facing) };
+      const forward = { x: Math.sin(animal.facing), z: -Math.cos(animal.facing) };
+      return {
+        x: animal.x + right.x * rightOffset + forward.x * forwardOffset,
+        y: upOffset,
+        z: animal.z + right.z * rightOffset + forward.z * forwardOffset
+      };
+    }
+
+    function drawHealthBar(worldX, worldY, worldZ, ratio, cameraState, widthMeters) {
+      const left = projectPoint({ x: worldX - widthMeters * 0.5, y: worldY, z: worldZ }, cameraState);
+      const right = projectPoint({ x: worldX + widthMeters * 0.5, y: worldY, z: worldZ }, cameraState);
+      const center = projectPoint({ x: worldX, y: worldY, z: worldZ }, cameraState);
+      if (!left || !right || !center) {
+        return;
+      }
+      const width = Math.max(24, right.x - left.x);
+      const height = Math.max(4, center.scale * 0.12);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+      ctx.fillRect(center.x - width * 0.5, center.y, width, height);
+      ctx.fillStyle = ratio > 0.5 ? "#72da6a" : ratio > 0.25 ? "#efcf55" : "#df5656";
+      ctx.fillRect(center.x - width * 0.5, center.y, width * ratio, height);
+    }
+
+    function remotePoint(remote, rightOffset, upOffset, forwardOffset) {
+      const right = { x: Math.cos(remote.facing), z: Math.sin(remote.facing) };
+      const forward = { x: Math.sin(remote.facing), z: -Math.cos(remote.facing) };
+      return {
+        x: remote.x + right.x * rightOffset + forward.x * forwardOffset,
+        y: remote.y + upOffset,
+        z: remote.z + right.z * rightOffset + forward.z * forwardOffset
+      };
+    }
+
+    function drawRemotePlayer(remote, cameraState) {
+      if (!remote) {
+        return;
+      }
+      const style = remote.style || CHARACTERS[0];
+      drawGroundCircle(remote.x, remote.z, remote.radius * 1.02, cameraState, "rgba(0, 0, 0, 0.16)");
+      const head = projectPoint(remotePoint(remote, 0, 2.15, 0.1), cameraState);
+      const chestLeft = projectPoint(remotePoint(remote, -0.28, 1.6, 0.08), cameraState);
+      const chestRight = projectPoint(remotePoint(remote, 0.28, 1.6, 0.08), cameraState);
+      const waistLeft = projectPoint(remotePoint(remote, -0.22, 1.08, 0.02), cameraState);
+      const waistRight = projectPoint(remotePoint(remote, 0.22, 1.08, 0.02), cameraState);
+      const leftHand = projectPoint(remotePoint(remote, -0.62, 1.48, 0.18), cameraState);
+      const rightHand = projectPoint(remotePoint(remote, 0.62, 1.48, 0.18), cameraState);
+      const leftFoot = projectPoint(remotePoint(remote, -0.18, 0.04, 0.04), cameraState);
+      const rightFoot = projectPoint(remotePoint(remote, 0.18, 0.04, 0.04), cameraState);
+      const hipLeft = projectPoint(remotePoint(remote, -0.18, 1.04, 0), cameraState);
+      const hipRight = projectPoint(remotePoint(remote, 0.18, 1.04, 0), cameraState);
+      if (!head || !chestLeft || !chestRight || !waistLeft || !waistRight) {
+        return;
+      }
+
+      fillPolygon([waistLeft, waistRight, chestRight, chestLeft], style.tunic, style.trim, Math.max(1.4, head.scale * 0.03));
+      drawLineBetween(chestLeft, leftHand, style.skin, Math.max(3, head.scale * 0.08));
+      drawLineBetween(chestRight, rightHand, style.skin, Math.max(3, head.scale * 0.08));
+      drawLineBetween(hipLeft, leftFoot, style.leggings, Math.max(4, head.scale * 0.1));
+      drawLineBetween(hipRight, rightFoot, style.leggings, Math.max(4, head.scale * 0.1));
+      drawCircleProjected(head, Math.max(9, head.scale * 0.26), style.skin, "rgba(60, 44, 38, 0.35)");
+      drawCircleProjected(projectPoint(remotePoint(remote, 0, 2.32, 0.04), cameraState), Math.max(6, head.scale * 0.16), style.hair);
+      drawHealthBar(remote.x, remote.y + remote.height + 0.45, remote.z, (remote.hp || 0) / (remote.maxHp || 10), cameraState, 1.4);
+      const namePoint = projectPoint(remotePoint(remote, 0, 2.72, 0.1), cameraState);
+      if (namePoint) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.fillRect(namePoint.x - 48, namePoint.y - 16, 96, 18);
+        ctx.fillStyle = "#f4f7ee";
+        ctx.font = "bold 14px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText(remote.username || "Remote", namePoint.x, namePoint.y - 3);
+        ctx.textAlign = "left";
+      }
+    }
+    function drawDragonBoss(animal, cameraState, fade) {
+      const bodyCenter = projectPoint(animalPoint(animal, 0, animal.height * 0.58, 0), cameraState);
+      const headCenter = projectPoint(animalPoint(animal, 0, animal.height * 0.92, animal.radius * 0.96), cameraState);
+      const leftWingTop = projectPoint(animalPoint(animal, -animal.radius * 1.9, animal.height * 1.08, -animal.radius * 0.1), cameraState);
+      const leftWingMid = projectPoint(animalPoint(animal, -animal.radius * 1.35, animal.height * 0.88, animal.radius * 0.18), cameraState);
+      const leftWingTip = projectPoint(animalPoint(animal, -animal.radius * 2.4, animal.height * 0.62, animal.radius * 0.42), cameraState);
+      const rightWingTop = projectPoint(animalPoint(animal, animal.radius * 1.9, animal.height * 1.08, -animal.radius * 0.1), cameraState);
+      const rightWingMid = projectPoint(animalPoint(animal, animal.radius * 1.35, animal.height * 0.88, animal.radius * 0.18), cameraState);
+      const rightWingTip = projectPoint(animalPoint(animal, animal.radius * 2.4, animal.height * 0.62, animal.radius * 0.42), cameraState);
+      const tailRoot = projectPoint(animalPoint(animal, 0, animal.height * 0.7, -animal.radius * 0.92), cameraState);
+      const tailTip = projectPoint(animalPoint(animal, 0, animal.height * 0.86, -animal.radius * 2.05), cameraState);
+      if (!bodyCenter || !headCenter) {
+        return;
+      }
+
+      const bodyColor = animal.hitFlash > 0 ? "#b7f098" : animal.type.body;
+      fillPolygon([
+        projectPoint(animalPoint(animal, -animal.radius * 0.8, animal.height * 0.34, -animal.radius * 0.18), cameraState),
+        projectPoint(animalPoint(animal, animal.radius * 0.8, animal.height * 0.34, -animal.radius * 0.18), cameraState),
+        projectPoint(animalPoint(animal, animal.radius * 0.68, animal.height * 0.96, animal.radius * 0.24), cameraState),
+        projectPoint(animalPoint(animal, -animal.radius * 0.68, animal.height * 0.96, animal.radius * 0.24), cameraState)
+      ], bodyColor, animal.type.back, Math.max(2, bodyCenter.scale * 0.06));
+
+      fillPolygon([bodyCenter, leftWingTop, leftWingTip, leftWingMid], animal.type.wing, animal.type.back, Math.max(2, bodyCenter.scale * 0.05));
+      fillPolygon([bodyCenter, rightWingTop, rightWingTip, rightWingMid], animal.type.wing, animal.type.back, Math.max(2, bodyCenter.scale * 0.05));
+
+      drawCircleProjected(headCenter, Math.max(12, headCenter.scale * animal.radius * 0.34), animal.type.accent, animal.type.back);
+      drawCircleProjected(projectPoint(animalPoint(animal, -animal.radius * 0.24, animal.height * 1.12, animal.radius * 0.88), cameraState), Math.max(5, headCenter.scale * 0.11), animal.type.back);
+      drawCircleProjected(projectPoint(animalPoint(animal, animal.radius * 0.24, animal.height * 1.12, animal.radius * 0.88), cameraState), Math.max(5, headCenter.scale * 0.11), animal.type.back);
+      drawCircleProjected(projectPoint(animalPoint(animal, 0, animal.height * 0.76, animal.radius * 1.12), cameraState), Math.max(4, headCenter.scale * 0.12), animal.type.fire);
+
+      if (tailRoot && tailTip) {
+        ctx.beginPath();
+        ctx.strokeStyle = animal.type.back;
+        ctx.lineWidth = Math.max(4, bodyCenter.scale * 0.08);
+        ctx.lineCap = "round";
+        ctx.moveTo(tailRoot.x, tailRoot.y);
+        ctx.lineTo(tailTip.x, tailTip.y);
+        ctx.stroke();
+      }
+
+      const legWidth = Math.max(3, bodyCenter.scale * 0.08);
+      const legPairs = [
+        [animalPoint(animal, -animal.radius * 0.5, animal.height * 0.32, animal.radius * 0.32), animalPoint(animal, -animal.radius * 0.42, 0.02, animal.radius * 0.26)],
+        [animalPoint(animal, animal.radius * 0.5, animal.height * 0.32, animal.radius * 0.32), animalPoint(animal, animal.radius * 0.42, 0.02, animal.radius * 0.26)],
+        [animalPoint(animal, -animal.radius * 0.42, animal.height * 0.32, -animal.radius * 0.38), animalPoint(animal, -animal.radius * 0.34, 0.02, -animal.radius * 0.3)],
+        [animalPoint(animal, animal.radius * 0.42, animal.height * 0.32, -animal.radius * 0.38), animalPoint(animal, animal.radius * 0.34, 0.02, -animal.radius * 0.3)]
+      ];
+      legPairs.forEach(([from, to]) => {
+        const p1 = projectPoint(from, cameraState);
+        const p2 = projectPoint(to, cameraState);
+        if (p1 && p2) {
+          ctx.beginPath();
+          ctx.strokeStyle = animal.type.back;
+          ctx.lineWidth = legWidth;
+          ctx.lineCap = "round";
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      });
+
+      const namePoint = projectPoint(animalPoint(animal, 0, animal.height + 1.2, 0), cameraState);
+      if (namePoint) {
+        ctx.fillStyle = `rgba(18, 12, 8, ${0.55 * fade})`;
+        ctx.fillRect(namePoint.x - 72, namePoint.y - 18, 144, 20);
+        ctx.fillStyle = "#ffe0a6";
+        ctx.font = "bold 15px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText("Dragon Canneloni", namePoint.x, namePoint.y - 3);
+        ctx.textAlign = "left";
+      }
+
+      drawHealthBar(animal.x, animal.height + 0.92, animal.z, animal.hp / animal.maxHp, cameraState, 3.6);
+    }
+
+    function drawAnimal(animal, cameraState) {
+      if (animal.dead && animal.deadTimer <= 0) {
+        return;
+      }
+      const fade = animal.dead ? animal.deadTimer / 2.2 : 1;
+      drawGroundCircle(animal.x, animal.z, animal.radius * 0.95, cameraState, `rgba(0, 0, 0, ${0.15 * fade})`);
+
+      if (animal.type.boss) {
+        drawDragonBoss(animal, cameraState, fade);
+        return;
+      }
+
+      const step = Math.sin(performance.now() * 0.004 + animal.x) * 0.08;
+      const bodyCenter = projectPoint(animalPoint(animal, 0, animal.height * 0.56, 0), cameraState);
+      const headCenter = projectPoint(animalPoint(animal, 0, animal.height * 0.78, animal.radius * 0.75), cameraState);
+      if (!bodyCenter || !headCenter) {
+        return;
+      }
+
+      const tint = animal.hitFlash > 0 ? "#f1c28f" : animal.type.body;
+      fillPolygon([
+        projectPoint(animalPoint(animal, -animal.radius * 0.62, animal.height * 0.3, -animal.radius * 0.15), cameraState),
+        projectPoint(animalPoint(animal, animal.radius * 0.62, animal.height * 0.3, -animal.radius * 0.15), cameraState),
+        projectPoint(animalPoint(animal, animal.radius * 0.56, animal.height * 0.78, animal.radius * 0.15), cameraState),
+        projectPoint(animalPoint(animal, -animal.radius * 0.56, animal.height * 0.78, animal.radius * 0.15), cameraState)
+      ], tint, animal.type.back, Math.max(1, bodyCenter.scale * 0.05));
+
+      drawCircleProjected(headCenter, Math.max(7, headCenter.scale * animal.radius * 0.36), animal.type.accent, animal.type.back);
+      drawCircleProjected(projectPoint(animalPoint(animal, -animal.radius * 0.18, animal.height * 1.02, animal.radius * 0.72), cameraState), Math.max(3, headCenter.scale * 0.09), animal.type.back);
+      drawCircleProjected(projectPoint(animalPoint(animal, animal.radius * 0.18, animal.height * 1.02, animal.radius * 0.72), cameraState), Math.max(3, headCenter.scale * 0.09), animal.type.back);
+
+      const legWidth = Math.max(2, bodyCenter.scale * 0.07);
+      const legPairs = [
+        [animalPoint(animal, -animal.radius * 0.38, animal.height * 0.28, animal.radius * 0.2), animalPoint(animal, -animal.radius * 0.32, 0.02, animal.radius * 0.15 + step)],
+        [animalPoint(animal, animal.radius * 0.38, animal.height * 0.28, animal.radius * 0.2), animalPoint(animal, animal.radius * 0.32, 0.02, animal.radius * 0.15 - step)],
+        [animalPoint(animal, -animal.radius * 0.34, animal.height * 0.28, -animal.radius * 0.28), animalPoint(animal, -animal.radius * 0.28, 0.02, -animal.radius * 0.22 - step)],
+        [animalPoint(animal, animal.radius * 0.34, animal.height * 0.28, -animal.radius * 0.28), animalPoint(animal, animal.radius * 0.28, 0.02, -animal.radius * 0.22 + step)]
+      ];
+      legPairs.forEach(([from, to]) => {
+        const p1 = projectPoint(from, cameraState);
+        const p2 = projectPoint(to, cameraState);
+        if (p1 && p2) {
+          ctx.beginPath();
+          ctx.strokeStyle = animal.type.back;
+          ctx.lineWidth = legWidth;
+          ctx.lineCap = "round";
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      });
+
+      const tailA = projectPoint(animalPoint(animal, 0, animal.height * 0.65, -animal.radius * 0.72), cameraState);
+      const tailB = projectPoint(animalPoint(animal, 0, animal.height * 0.82, -animal.radius * 1.15), cameraState);
+      if (tailA && tailB) {
+        ctx.beginPath();
+        ctx.strokeStyle = animal.type.back;
+        ctx.lineWidth = Math.max(2, bodyCenter.scale * 0.05);
+        ctx.lineCap = "round";
+        ctx.moveTo(tailA.x, tailA.y);
+        ctx.lineTo(tailB.x, tailB.y);
+        ctx.stroke();
+      }
+
+      drawHealthBar(animal.x, animal.height + 0.55, animal.z, animal.hp / animal.maxHp, cameraState, 1.4);
+    }
+
+    function localPoint(rightOffset, upOffset, forwardOffset, facingOverride = null) {
+      const facing = facingOverride === null ? player.facing : facingOverride;
+      const right = { x: Math.cos(facing), z: Math.sin(facing) };
+      const forward = { x: Math.sin(facing), z: -Math.cos(facing) };
+      return {
+        x: player.x + right.x * rightOffset + forward.x * forwardOffset,
+        y: player.y + upOffset,
+        z: player.z + right.z * rightOffset + forward.z * forwardOffset
+      };
+    }
+
+    function drawLineBetween(a, b, color, width) {
+      if (!a || !b) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    function drawRibbon(points, color, width) {
+      if (points.some((point) => !point)) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i += 1) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.stroke();
+    }
+    function drawPlayer(cameraState) {
+      const style = player.style;
+      const attack = player.attack;
+      const walk = Math.sin(player.stepPhase);
+      const sway = Math.sin(player.stepPhase * 0.5) * 0.04;
+      const jumpLift = player.y * 0.08;
+      let poseFacing = player.facing;
+      let rightLegForward = 0;
+      let leftLegForward = 0;
+      let rightLegUp = 0;
+      let leftLegUp = 0;
+      let rightArmForward = -0.1;
+      let leftArmForward = 0.18;
+      let rightArmHeight = 1.92;
+      let leftArmHeight = 1.58;
+
+      if (!attack) {
+        rightLegForward = -0.12 - walk * 0.18;
+        leftLegForward = 0.16 + walk * 0.18;
+      } else {
+        const t = clamp(attack.timer / attack.duration, 0, 1);
+        const swing = Math.sin(t * Math.PI);
+        if (attack.key === "f") {
+          rightLegForward = 0.18 + swing * 1.1;
+          rightLegUp = swing * 0.95;
+          leftLegForward = -0.2;
+          rightArmForward = -0.22;
+          leftArmForward = 0.34;
+          rightArmHeight = 1.82;
+          leftArmHeight = 1.74;
+        } else if (attack.key === "k") {
+          poseFacing = player.facing + swing * 1.15;
+          rightLegForward = swing * 0.84;
+          leftLegForward = -0.34 + swing * 0.16;
+          rightLegUp = swing * 0.72;
+          leftArmForward = -0.28;
+          rightArmForward = 0.52;
+          leftArmHeight = 1.86;
+          rightArmHeight = 1.74;
+        } else if (attack.key === "l") {
+          leftLegForward = 0.22 + swing * 0.92;
+          leftLegUp = swing * 1.26;
+          rightLegForward = -0.24;
+          leftArmForward = 0.2;
+          rightArmForward = -0.26;
+          leftArmHeight = 1.9;
+          rightArmHeight = 1.76;
+        }
+      }
+
+      drawGroundCircle(player.x, player.z, player.radius * 1.08, cameraState, "rgba(0, 0, 0, 0.18)");
+
+      const leftAnkle = projectPoint(localPoint(-0.22, 0.06 + leftLegUp, 0.1 + leftLegForward, poseFacing), cameraState);
+      const rightAnkle = projectPoint(localPoint(0.22, 0.06 + rightLegUp, 0.06 + rightLegForward, poseFacing), cameraState);
+      const leftKnee = projectPoint(localPoint(-0.18, 0.8 + jumpLift + leftLegUp * 0.5, 0.08 + leftLegForward * 0.52, poseFacing), cameraState);
+      const rightKnee = projectPoint(localPoint(0.18, 0.82 + jumpLift + rightLegUp * 0.46, 0.02 + rightLegForward * 0.52, poseFacing), cameraState);
+      const hipLeft = projectPoint(localPoint(-0.18, 1.18 + jumpLift, 0.02, poseFacing), cameraState);
+      const hipRight = projectPoint(localPoint(0.18, 1.18 + jumpLift, 0.02, poseFacing), cameraState);
+      const waistLeft = projectPoint(localPoint(-0.28, 1.2 + jumpLift, 0.08, poseFacing), cameraState);
+      const waistRight = projectPoint(localPoint(0.28, 1.2 + jumpLift, 0.08, poseFacing), cameraState);
+      const chestLeft = projectPoint(localPoint(-0.32, 1.7 + jumpLift, 0.12 + sway, poseFacing), cameraState);
+      const chestRight = projectPoint(localPoint(0.32, 1.7 + jumpLift, 0.12 - sway, poseFacing), cameraState);
+      const head = projectPoint(localPoint(0, 2.26 + jumpLift, 0.12, poseFacing), cameraState);
+      const leftShoulder = projectPoint(localPoint(-0.42, 1.82 + jumpLift, 0.08, poseFacing), cameraState);
+      const rightShoulder = projectPoint(localPoint(0.42, 1.82 + jumpLift, 0.08, poseFacing), cameraState);
+      const leftElbow = projectPoint(localPoint(-0.64, leftArmHeight + jumpLift, leftArmForward, poseFacing), cameraState);
+      const rightElbow = projectPoint(localPoint(0.62, rightArmHeight + jumpLift, rightArmForward, poseFacing), cameraState);
+      const leftHand = projectPoint(localPoint(-0.84, leftArmHeight - 0.02 + jumpLift, leftArmForward + 0.18, poseFacing), cameraState);
+      const rightHand = projectPoint(localPoint(0.82, rightArmHeight - 0.04 + jumpLift, rightArmForward + 0.16, poseFacing), cameraState);
+      const skirtFrontLeft = projectPoint(localPoint(-0.16, 1.08 + jumpLift, 0.56, poseFacing), cameraState);
+      const skirtFrontRight = projectPoint(localPoint(0.16, 1.08 + jumpLift, 0.56, poseFacing), cameraState);
+      const skirtBottomLeft = projectPoint(localPoint(-0.14, 0.36 + jumpLift, 0.52, poseFacing), cameraState);
+      const skirtBottomRight = projectPoint(localPoint(0.14, 0.36 + jumpLift, 0.52, poseFacing), cameraState);
+      const skirtBackLeft = projectPoint(localPoint(-0.12, 1.04 + jumpLift, -0.32, poseFacing), cameraState);
+      const skirtBackRight = projectPoint(localPoint(0.12, 1.04 + jumpLift, -0.32, poseFacing), cameraState);
+      const skirtBackBottomLeft = projectPoint(localPoint(-0.1, 0.32 + jumpLift, -0.42, poseFacing), cameraState);
+      const skirtBackBottomRight = projectPoint(localPoint(0.1, 0.32 + jumpLift, -0.42, poseFacing), cameraState);
+      const bootLeftTop = projectPoint(localPoint(-0.2, 0.48 + leftLegUp * 0.4, 0.12 + leftLegForward * 0.38, poseFacing), cameraState);
+      const bootRightTop = projectPoint(localPoint(0.22, 0.5 + rightLegUp * 0.4, -0.1 + rightLegForward * 0.4, poseFacing), cameraState);
+      const bunLeft = projectPoint(localPoint(-0.22, 2.36 + jumpLift, 0.05, poseFacing), cameraState);
+      const bunRight = projectPoint(localPoint(0.22, 2.36 + jumpLift, 0.05, poseFacing), cameraState);
+      const ribbonLeftA = projectPoint(localPoint(-0.18, 2.34 + jumpLift, -0.1, poseFacing), cameraState);
+      const ribbonLeftB = projectPoint(localPoint(-0.34, 2.4 + jumpLift, -0.42, poseFacing), cameraState);
+      const ribbonLeftC = projectPoint(localPoint(-0.24, 2.28 + jumpLift, -0.68, poseFacing), cameraState);
+      const ribbonRightA = projectPoint(localPoint(0.18, 2.34 + jumpLift, -0.1, poseFacing), cameraState);
+      const ribbonRightB = projectPoint(localPoint(0.34, 2.42 + jumpLift, -0.42, poseFacing), cameraState);
+      const ribbonRightC = projectPoint(localPoint(0.22, 2.26 + jumpLift, -0.72, poseFacing), cameraState);
+
+      if (!head) {
+        return;
+      }
+
+      const trimLine = Math.max(1.5, head.scale * 0.035);
+      const legWidth = Math.max(5, head.scale * 0.13);
+      const armWidth = Math.max(4, head.scale * 0.095);
+      const headRadius = Math.max(9, head.scale * 0.28);
+      const bunRadius = Math.max(4, head.scale * 0.1);
+
+      drawLineBetween(hipLeft, leftKnee, style.leggings, legWidth);
+      drawLineBetween(leftKnee, leftAnkle, style.leggings, legWidth);
+      drawLineBetween(hipRight, rightKnee, style.leggings, legWidth);
+      drawLineBetween(rightKnee, rightAnkle, style.leggings, legWidth);
+      drawLineBetween(bootLeftTop, leftAnkle, style.boots, legWidth + 3);
+      drawLineBetween(bootRightTop, rightAnkle, style.boots, legWidth + 3);
+
+      fillPolygon([waistLeft, waistRight, chestRight, chestLeft], player.hitFlash > 0 ? "#f3d2af" : style.tunic, style.trim, trimLine);
+      fillPolygon([
+        projectPoint(localPoint(-0.18, 1.48 + jumpLift, 0.2, poseFacing), cameraState),
+        projectPoint(localPoint(0.18, 1.48 + jumpLift, 0.2, poseFacing), cameraState),
+        projectPoint(localPoint(0.14, 1.16 + jumpLift, 0.14, poseFacing), cameraState),
+        projectPoint(localPoint(-0.14, 1.16 + jumpLift, 0.14, poseFacing), cameraState)
+      ], "#dce4ec", "rgba(70, 90, 110, 0.18)", trimLine);
+      fillPolygon([waistLeft, waistRight, skirtFrontRight, skirtBottomRight, skirtBottomLeft, skirtFrontLeft], style.tunic, style.trim, trimLine);
+      fillPolygon([skirtBackLeft, skirtBackRight, skirtBackBottomRight, skirtBackBottomLeft], style.tunic, style.trim, trimLine);
+
+      drawLineBetween(leftShoulder, leftElbow, style.skin, armWidth);
+      drawLineBetween(leftElbow, leftHand, style.skin, armWidth - 0.5);
+      drawLineBetween(rightShoulder, rightElbow, style.skin, armWidth);
+      drawLineBetween(rightElbow, rightHand, style.skin, armWidth - 0.5);
+
+      [leftHand, rightHand].forEach((hand) => {
+        if (!hand) return;
+        drawCircleProjected(hand, Math.max(3, head.scale * 0.06), style.skin);
+        ctx.beginPath();
+        ctx.strokeStyle = "#292a2d";
+        ctx.lineWidth = trimLine;
+        ctx.arc(hand.x, hand.y, Math.max(4, head.scale * 0.08), 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      [leftShoulder, rightShoulder].forEach((shoulder) => {
+        if (!shoulder) return;
+        drawCircleProjected(shoulder, Math.max(7, head.scale * 0.11), style.tunic, style.trim);
+      });
+
+      drawCircleProjected(head, headRadius, style.skin, "rgba(60, 44, 38, 0.35)");
+      ctx.beginPath();
+      ctx.fillStyle = style.hair;
+      ctx.arc(head.x, head.y - headRadius * 0.28, headRadius * 0.96, Math.PI, Math.PI * 2);
+      ctx.fill();
+      [bunLeft, bunRight].forEach((bun) => {
+        if (!bun) return;
+        drawCircleProjected(bun, bunRadius, style.hair);
+        drawCircleProjected(bun, Math.max(2.4, bunRadius * 0.5), style.ribbon);
+      });
+      drawRibbon([ribbonLeftA, ribbonLeftB, ribbonLeftC], style.ribbon, Math.max(2, trimLine));
+      drawRibbon([ribbonRightA, ribbonRightB, ribbonRightC], style.ribbon, Math.max(2, trimLine));
+
+      const eyeOffset = headRadius * 0.34;
+      const eyeY = head.y - headRadius * 0.08;
+      ctx.beginPath();
+      ctx.fillStyle = "#241d1a";
+      ctx.arc(head.x - eyeOffset * 0.42, eyeY, Math.max(2, headRadius * 0.08), 0, Math.PI * 2);
+      ctx.arc(head.x + eyeOffset * 0.42, eyeY, Math.max(2, headRadius * 0.08), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(70, 42, 32, 0.45)";
+      ctx.lineWidth = Math.max(1, trimLine * 0.8);
+      ctx.moveTo(head.x - headRadius * 0.18, head.y + headRadius * 0.32);
+      ctx.quadraticCurveTo(head.x, head.y + headRadius * 0.44, head.x + headRadius * 0.18, head.y + headRadius * 0.32);
+      ctx.stroke();
+
+      const gunBodyA = projectPoint(localPoint(0.76, rightArmHeight - 0.04 + jumpLift, rightArmForward + 0.06, poseFacing), cameraState);
+      const gunBodyB = projectPoint(localPoint(0.96, rightArmHeight - 0.02 + jumpLift, rightArmForward + 0.62, poseFacing), cameraState);
+      const gunNose = projectPoint(localPoint(1.0, rightArmHeight - 0.01 + jumpLift, rightArmForward + 1.18, poseFacing), cameraState);
+      const gunStock = projectPoint(localPoint(0.62, rightArmHeight - 0.02 + jumpLift, rightArmForward - 0.18, poseFacing), cameraState);
+      if (gunBodyA && gunBodyB && gunNose && gunStock) {
+        ctx.beginPath();
+        ctx.strokeStyle = "#20262f";
+        ctx.lineWidth = Math.max(3, gunBodyA.scale * 0.1);
+        ctx.lineCap = "round";
+        ctx.moveTo(gunStock.x, gunStock.y);
+        ctx.lineTo(gunBodyA.x, gunBodyA.y);
+        ctx.lineTo(gunBodyB.x, gunBodyB.y);
+        ctx.lineTo(gunNose.x, gunNose.y);
+        ctx.stroke();
+        ctx.fillStyle = "#d4b04f";
+        ctx.font = "bold 10px Trebuchet MS";
+        ctx.fillText("67", (gunBodyA.x + gunBodyB.x) * 0.5 - 5, (gunBodyA.y + gunBodyB.y) * 0.5 + 3);
+      }
+
+      const namePoint = projectPoint(localPoint(0, 2.82 + jumpLift, 0.12, poseFacing), cameraState);
+      if (namePoint) {
+        ctx.font = "bold 14px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.fillRect(namePoint.x - 48, namePoint.y - 16, 96, 18);
+        ctx.fillStyle = "#f4f7ee";
+        ctx.fillText(player.username, namePoint.x, namePoint.y - 3);
+        ctx.textAlign = "left";
+      }
+
+      if (attack) {
+        const reach = projectPoint(localPoint(0, 1.3 + Math.sin(attack.timer / attack.duration * Math.PI) * 0.7, attack.range, poseFacing), cameraState);
+        if (reach) {
+          drawCircleProjected(reach, Math.max(8, reach.scale * 0.18), "rgba(255, 217, 113, 0.22)", "rgba(255, 244, 198, 0.35)");
+        }
+      }
+    }
+
+    function drawHearts() {
+      const hearts = player.maxHp;
+      const filled = player.hp;
+      const baseX = 22;
+      const baseY = canvas.height - 42;
+      for (let i = 0; i < hearts; i += 1) {
+        const x = baseX + i * 18;
+        const y = baseY;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 5);
+        ctx.bezierCurveTo(x, y, x + 6, y, x + 6, y + 5);
+        ctx.bezierCurveTo(x + 6, y, x + 12, y, x + 12, y + 5);
+        ctx.bezierCurveTo(x + 12, y + 12, x + 6, y + 16, x + 6, y + 21);
+        ctx.bezierCurveTo(x + 6, y + 16, x, y + 12, x, y + 5);
+        ctx.closePath();
+        ctx.fillStyle = i < filled ? "#de5656" : "rgba(255,255,255,0.16)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(35, 20, 20, 0.55)";
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+    }
+
+    function drawCrosshair() {
+      const x = canvas.width - 56;
+      const y = canvas.height - 56;
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = 2;
+      ctx.arc(x, y, 16, 0, Math.PI * 2);
+      ctx.moveTo(x - 8, y);
+      ctx.lineTo(x + 8, y);
+      ctx.moveTo(x, y - 8);
+      ctx.lineTo(x, y + 8);
+      ctx.stroke();
+    }
+
+    function drawCombatOverlay() {
+      drawHearts();
+      ctx.fillStyle = "rgba(15, 26, 18, 0.78)";
+      ctx.fillRect(18, canvas.height - 122, 228, 28);
+      ctx.fillStyle = "#e4efe1";
+      ctx.font = "bold 16px Trebuchet MS";
+      ctx.fillText(`AK67 67 | Ammo ${player.gunAmmo}`, 28, canvas.height - 102);
+      if (player.attack) {
+        ctx.fillStyle = "rgba(15, 26, 18, 0.72)";
+        ctx.fillRect(18, canvas.height - 86, 188, 28);
+        ctx.fillStyle = "#ffd870";
+        ctx.font = "bold 16px Trebuchet MS";
+        ctx.fillText(player.attack.label, 28, canvas.height - 66);
+      }
+      if (player.defeated) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f5f0e8";
+        ctx.font = "bold 40px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText("Defeated", canvas.width * 0.5, canvas.height * 0.45);
+        ctx.font = "20px Trebuchet MS";
+        ctx.fillText("Press R to restart", canvas.width * 0.5, canvas.height * 0.52);
+        ctx.textAlign = "left";
+      }
+      if (player.hitFlash > 0) {
+        ctx.fillStyle = `rgba(175, 40, 40, ${player.hitFlash * 0.18})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawSky();
+      const cameraState = buildCamera();
+      drawGround(cameraState);
+
+      const drawables = [];
+      for (const rock of rocks) {
+        drawables.push({ type: "rock", object: rock, depth: Math.hypot(rock.x - cameraState.pos.x, rock.z - cameraState.pos.z) });
+      }
+      for (const tree of trees) {
+        drawables.push({ type: "tree", object: tree, depth: Math.hypot(tree.x - cameraState.pos.x, tree.z - cameraState.pos.z) });
+      }
+      for (const animal of animals) {
+        if (animal.dead && animal.deadTimer <= 0) {
+          continue;
+        }
+        drawables.push({ type: "animal", object: animal, depth: Math.hypot(animal.x - cameraState.pos.x, animal.z - cameraState.pos.z) });
+      }
+      drawables.push({ type: "player", object: player, depth: Math.hypot(player.x - cameraState.pos.x, player.z - cameraState.pos.z) });
+      for (const remotePlayer of listRemotePlayers()) {
+        drawables.push({ type: "remote", object: remotePlayer, depth: Math.hypot(remotePlayer.x - cameraState.pos.x, remotePlayer.z - cameraState.pos.z) });
+      }
+      drawables.sort((a, b) => b.depth - a.depth);
+
+      for (const drawable of drawables) {
+        if (drawable.type === "rock") {
+          drawRock(drawable.object, cameraState);
+        } else if (drawable.type === "tree") {
+          drawTree(drawable.object, cameraState);
+        } else if (drawable.type === "animal") {
+          drawAnimal(drawable.object, cameraState);
+        } else if (drawable.type === "remote") {
+          drawRemotePlayer(drawable.object, cameraState);
+        } else {
+          drawPlayer(cameraState);
+        }
+      }
+
+      if (blackHole) {
+        const center = projectPoint({ x: blackHole.x, y: 0.8, z: blackHole.z }, cameraState);
+        if (center) {
+          const outer = Math.max(24, center.scale * (blackHole.radius + Math.sin(blackHole.phase) * 0.4));
+          const inner = outer * 0.45;
+          const ring = ctx.createRadialGradient(center.x, center.y, inner * 0.25, center.x, center.y, outer);
+          ring.addColorStop(0, "rgba(0, 0, 0, 0.95)");
+          ring.addColorStop(0.45, "rgba(34, 24, 52, 0.92)");
+          ring.addColorStop(0.72, "rgba(102, 63, 162, 0.4)");
+          ring.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.beginPath();
+          ctx.fillStyle = ring;
+          ctx.arc(center.x, center.y, outer, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      if (player.tracer) {
+        const from = projectPoint(player.tracer.from, cameraState);
+        const to = projectPoint(player.tracer.to, cameraState);
+        if (from && to) {
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(255, 228, 147, 0.9)";
+          ctx.lineWidth = Math.max(2, from.scale * 0.06);
+          ctx.moveTo(from.x, from.y);
+          ctx.lineTo(to.x, to.y);
+          ctx.stroke();
+        }
+      }
+
+      const fogGradient = ctx.createLinearGradient(0, canvas.height * 0.3, 0, canvas.height);
+      fogGradient.addColorStop(0, "rgba(234, 243, 245, 0)");
+      fogGradient.addColorStop(1, mapDestroyed ? "rgba(22, 18, 34, 0.32)" : "rgba(214, 227, 230, 0.14)");
+      ctx.fillStyle = fogGradient;
+      ctx.fillRect(0, canvas.height * 0.28, canvas.width, canvas.height * 0.72);
+      drawCrosshair();
+      drawCombatOverlay();
+    }
+
+    function frame(now) {
+      const deltaTime = Math.min((now - lastFrame) / 1000, 0.04);
+      lastFrame = now;
+      updatePlayer(deltaTime);
+      updateAnimals(deltaTime);
+      updateMultiplayer(deltaTime);
+      drawScene();
+      requestAnimationFrame(frame);
+    }
+
+    function startPointerDrag(event) {
+      if (!gameStarted) {
+        return;
+      }
+      camera.dragging = true;
+      camera.pointerId = event.pointerId;
+      camera.lastX = event.clientX;
+      camera.lastY = event.clientY;
+      canvas.setPointerCapture(event.pointerId);
+    }
+
+    function movePointer(event) {
+      if (!camera.dragging || event.pointerId !== camera.pointerId) {
+        return;
+      }
+      const dx = event.clientX - camera.lastX;
+      const dy = event.clientY - camera.lastY;
+      camera.lastX = event.clientX;
+      camera.lastY = event.clientY;
+      camera.yaw += dx * 0.008;
+      camera.pitch = clamp(camera.pitch + dy * 0.004, 0.12, 0.76);
+    }
+
+    function endPointerDrag(event) {
+      if (event.pointerId !== undefined && camera.pointerId !== null && event.pointerId !== camera.pointerId) {
+        return;
+      }
+      camera.dragging = false;
+      const releasedPointerId = camera.pointerId;
+      camera.pointerId = null;
+      try {
+        if (releasedPointerId !== null) {
+          canvas.releasePointerCapture(releasedPointerId);
+        }
+      } catch (error) {
+      }
+    }
+
+    canvas.addEventListener("pointerdown", startPointerDrag);
+    canvas.addEventListener("pointermove", movePointer);
+    canvas.addEventListener("pointerup", endPointerDrag);
+    canvas.addEventListener("pointercancel", endPointerDrag);
+    canvas.addEventListener("pointerleave", endPointerDrag);
+    canvas.addEventListener("wheel", (event) => {
+      if (!gameStarted) {
+        return;
+      }
+      camera.distance = clamp(camera.distance + event.deltaY * 0.01, 6.8, 14.5);
+      event.preventDefault();
+      updateStatus();
+    }, { passive: false });
+
+    window.addEventListener("resize", resizeCanvas);
+
+    window.addEventListener("keydown", (event) => {
+      const key = normalizeControlKey(event);
+      if (!gameStarted) {
+        return;
+      }
+      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "1", "2", "6", "7"].includes(key)) {
+        keys.add(key);
+        event.preventDefault();
+      }
+      if ((key === "1" || key === "2") && keys.has("1") && keys.has("2")) {
+        triggerBlackHoleWeapon();
+      }
+      if (event.code === "Space") {
+        jumpQueued = true;
+        event.preventDefault();
+      }
+      if (key === "q") {
+        camera.fov = clamp(camera.fov - 3, 48, 96);
+        updateStatus();
+      }
+      if (key === "e") {
+        shootAK67();
+        event.preventDefault();
+      }
+      if (key === "f" || key === "k" || key === "l") {
+        startAttack(key);
+      }
+      if (key === "r" && player.defeated) {
+        if (multiplayer.mode === "client") {
+          respawnPlayer();
+        } else {
+          generateWorld();
+          respawnPlayer();
+        }
+        updateStatus();
+      }
+    });
+
+    window.addEventListener("keyup", (event) => {
+      keys.delete(normalizeControlKey(event));
+    });
+
+    startButton.addEventListener("click", startSoloGame);
+    hostButton.addEventListener("click", startHostGame);
+    joinButton.addEventListener("click", startJoinGame);
+
+    if (multiplayer.joinCode) {
+      roomInput.value = sanitizeRoomCode(multiplayer.joinCode);
+      setMenuMessage(`Join link detected for ${roomInput.value}. Press Join Online.`);
+    } else {
+      setMenuMessage("Solo works instantly. Online mode uses a direct peer-to-peer connection.");
+    }
+
+    resizeCanvas();
+    createCharacterCards();
+    setWorldSeed(hashStringToSeed("forestfighters67"));
+    generateWorld(worldSeed);
+    updateStatus();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
